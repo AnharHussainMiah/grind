@@ -1,0 +1,23 @@
+project:
+  groupId: "com.example"
+  artifactId: "my-app"
+  version: "1.0.0"
+  name: "My Application"
+  description: "A sample Maven project represented in YAML"
+
+  dependencies:
+    - groupId: "org.springframework"
+      artifactId: "spring-core"
+      version: "5.3.20"
+      
+    - groupId: "junit"
+      artifactId: "junit"
+      version: "4.13.2"
+      scope: "test"
+
+  tasks:
+    run: "mvn exec:java -Dexec.mainClass=com.example.Main"
+    dev: "mvn clean compile exec:java -Dexec.mainClass=com.example.Main"
+    build: "mvn clean package"
+    test: "mvn test"
+    clean: "mvn clean"
