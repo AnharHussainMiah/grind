@@ -111,7 +111,7 @@ async fn get_pom(dep: Dependency) -> String {
             }
         }
     }
-    
+
     println!("==> fetching POM.xml for {}", dep.artifactId);
     if let Ok(response) = reqwest::get(self::build_pom_url(
         &dep.groupId,
@@ -127,9 +127,11 @@ async fn get_pom(dep: Dependency) -> String {
                 // cache POM
                 let pom_name = format!("{}_{}_{}.pom", dep.groupId, dep.artifactId, dep.version);
                 let local_path = format!("cache/{}", pom_name);
-                tokio::fs::write(local_path, b.clone()).await.unwrap_or_else(|e| eprintln!("Failed to write file: {}", e));
+                tokio::fs::write(local_path, b.clone())
+                    .await
+                    .unwrap_or_else(|e| eprintln!("Failed to write file: {}", e));
                 b
-            },
+            }
             Err(e) => e.to_string(),
         };
     }
@@ -151,11 +153,11 @@ fn build_pom_url(group: &str, artifact: &str, version: &str) -> String {
     )
 }
 
-    // let query = format!(r#"g:"{}" AND a:"{}""#, group, artifact);
-    // let url = format!(
-    //     "https://search.maven.org/solrsearch/select?q={}&rows=200&core=gav&wt=json",
-    //     urlencoding::encode(&query)
-    // );
+// let query = format!(r#"g:"{}" AND a:"{}""#, group, artifact);
+// let url = format!(
+//     "https://search.maven.org/solrsearch/select?q={}&rows=200&core=gav&wt=json",
+//     urlencoding::encode(&query)
+// );
 
 #[derive(Debug)]
 enum DownloadError {
