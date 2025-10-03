@@ -3,3 +3,13 @@ https://search.maven.org/solrsearch/select?q=g:org.postgresql+AND+a:postgresql&r
 https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.pom (also swap ".pom" with ".jar")
 
 in POM only consider "compile" and "rutime" ignore others
+
+
+javac -d out -cp "lib/*" $(find src/main/java -name "*.java")
+
+Manifest.txt
+
+Main-Class: com.example.Main
+Class-Path: lib/gson-2.10.1.jar lib/foo.jar etc
+
+jar cfm app.jar manifest.txt -C out .

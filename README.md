@@ -6,20 +6,22 @@
 
 ## 🚀 More Coffee, Less XML
 
-Compared to modern build tools, Java build tools feel outdated and overly complex. With **grind** we're trying to bring a similar experiance as very popular tools like `npm` and `cargo`.
+Compared to modern build tools, Java build tools feel outdated and overly complex. With **grind** we're trying to bring a similar experiance as that of `npm` or `cargo`.
 
-**grind** is a blazing-fast, Rust powered command line interface designed to take the friction out of **Maven** and other Java Build tools. Tired of manually editing verbose `pom.xml` files or hunting for the right dependency version?
+**grind** is a blazing-fast, Rust powered command line interface designed to take the friction out of **Maven**, **Gradle** and other Java Build tools. Tired of manually editing verbose `pom.xml` files or hunting for the right dependency version, or trying to get it actually build?
 
-**grind** simplifies your project workflow by introducing the **`grind.yml`** manifest, providing a single, consistent source of truth for all your project configurations, Write less XML, manage more efficiently, and get back to writing code.
+**grind** simplifies your project workflow by introducing the **`grind.yml`** manifest, providing a single, consistent source of truth for all your project configurations, Write less XML or configuration, manage more efficiently, and get back to writing code!
+
+**TL;DR: grind the npm of Java**
 
 ## ✨ Main Features
 
-| Feature                      | Description                                                                                                     | CLI Example                          |
-| :--------------------------- | :-------------------------------------------------------------------------------------------------------------- | :----------------------------------- |
-| **☕ Project Scaffolding**   | Quickly bootstrap a new Java project structure with a pre-configured `grind.yml` manifest.                      | `grind init my-new-service`          |
-| **⚙️ Config-Driven Builds**  | Builds the entire project based on the `grind.yml` manifest                                                     | `grind build`                        |
-| **➕ Dependency Management** | Add and remove project dependencies directly from the command line without ever opening a `pom.xml` file again. | `grind add spring-boot mysql-driver` |
-| **✅ Task Execution**        | The `grind.yml` can contain many custom tasks, similar to `package.json`                                        | `grind task web`                     |
+| Feature                      | Description                                                                                | CLI Example                          |
+| :--------------------------- | :----------------------------------------------------------------------------------------- | :----------------------------------- |
+| **☕ Project Scaffolding**   | Quickly bootstrap a new Java project structure with a pre-configured `grind.yml` manifest. | `grind init my-new-service`          |
+| **⚙️ Easy Jar Builds**       | Builds the entire project based on the `grind.yml` manifest into a Jar                     | `grind build`                        |
+| **➕ Dependency Management** | Add and remove project dependencies directly from the command line                         | `grind add spring-boot mysql-driver` |
+| **✅ Task Execution**        | The `grind.yml` can contain many custom tasks, similar to `package.json`                   | `grind task clean`                   |
 
 ## 📥 Installation
 
@@ -48,17 +50,59 @@ We recommend downloading the appropriate binary for your system from the [GitHub
     sudo mv grind /usr/local/bin/
     ```
 
-### Windows (PowerShell)
+## Current Progress/Road Map
 
-1.  Download the `grind-x86_64-pc-windows-msvc.exe` file from the [Releases page](https://github.com/anharhussainmiah/grind/releases/latest).
-2.  Rename the downloaded file to `cfe.exe`.
-3.  Place `grind.exe` in a directory included in your system's `Path` environment variable (e.g., `C:\Users\YourName\.cargo\bin`).
+- [x] Scaffold New Project
+- [x] Install all dependencies
+- [ ] Compile and build Jar file
+- [ ] Compile and run Project
+- [ ] Run a specific task as define in the `grind.yml` manifest
+- [ ] List all available custom tasks
+- [ ] Add a dependency
+- [ ] Remove a dependency
 
----
+### Longer Term goals
+
+- [ ] Test Runner
+- [ ] Manage Java SDK versions a bit like "Node Version Manager" or "rustup"
+- [ ] A Java formatter e.g a bit like "cargo fmt"
 
 ## 💡 Basic Usage Examples
 
 Once installed, managing your Maven projects is only a single command away.
+
+```shell
+                     /$$                 /$$
+                    |__/                | $$
+  /$$$$$$   /$$$$$$  /$$ /$$$$$$$   /$$$$$$$
+ /$$__  $$ /$$__  $$| $$| $$__  $$ /$$__  $$
+| $$  \ $$| $$  \__/| $$| $$  \ $$| $$  | $$
+| $$  | $$| $$      | $$| $$  | $$| $$  | $$
+|  $$$$$$$| $$      | $$| $$  | $$|  $$$$$$$
+ \____  $$|__/      |__/|__/  |__/ \_______/
+ /$$  \ $$
+|  $$$$$$/
+ \______/
+
+        Grind hard, code harder v0.0.1
+          - "builds, without the headache"
+
+
+Usage: grind <COMMAND>
+
+Commands:
+  init     Initializes a new grind project structure
+  install  Install all the external libraries as defined in the grind.yml dependencies
+  build    Builds the project using the configuration in grind.yml
+  run      Runs the project (e.g., mvn spring-boot:run)
+  add      Adds a dependency to the project's grind.yml
+  remove   Removes a dependency from the project's grind.yml
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
 
 ### 1. Initialize a New Project
 
@@ -90,7 +134,7 @@ project:
     clean: "rm -rf target/"
 ```
 
-### 2. Build the Project
+### 2. Compile, build, and create a Jar file
 
 Runs the build process
 
@@ -119,9 +163,15 @@ grind remove postgresql-driver
 Executes the project using the configured settings.
 
 ```bash
-grind task run
+grind run
 ```
 
-# 🤖 AI Assisted Code Disclaimer
+## No FAT Jars!
 
-The source code for **grind** was partially generated, reviewed, and enhanced using Google's generative AI models. While this assistance significantly accelerated development, the code has been thoroughly reviewed, tested, and audited for security, performance, and correctness by human developers. We are committed to maintaining a high standard of quality for this project.
+I was deciding on if `grind` should create "fat Jars", but then I realised that in modern development we end up creating docker containers, and creating a fat jar doesn't make all that sense, AND you potentially lose out on caching!
+
+Instead of creating a fat jar, just copy the `lib` folder, you end up with a single image anyway, but with the advantage of proper caching meaning your images will only update the actual application which could be kilobytes vs hundreds of megabytes!
+
+## No Windows Support.
+
+Techinally `grind` could support Windows, but I don't have the engery to make that happen, it's open source and I would massively welcome contributions, if Windows is important to you!
