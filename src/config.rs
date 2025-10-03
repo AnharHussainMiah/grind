@@ -17,11 +17,11 @@ pub struct Project {
     pub tasks: HashMap<String, String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone, Eq, Hash, PartialEq)]
 pub struct Dependency {
     pub groupId: String,
     pub artifactId: String,
     pub version: String,
-    #[serde(default)]  // Optional field: default to None if missing
+    #[serde(default)] // Optional field: default to None if missing
     pub scope: Option<String>,
 }

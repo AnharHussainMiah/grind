@@ -33,10 +33,10 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
     ```bash
     # For Linux (x86_64)
-    wget -O cfe [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/cfe-x86_64-unknown-linux-gnu](https://github.com/YOUR_GITHUB_USERNAME/cfe/releases/download/vX.Y.Z/cfe-x86_64-unknown-linux-gnu)
+    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/cfe-x86_64-unknown-linux-gnu](https://github.com/YOUR_GITHUB_USERNAME/cfe/releases/download/vX.Y.Z/cfe-x86_64-unknown-linux-gnu)
 
     # OR for macOS (Apple Silicon/M-series)
-    wget -O cfe [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/cfe-aarch64-apple-darwin](https://github.com/YOUR_GITHUB_USERNAME/cfe/releases/download/vX.Y.Z/cfe-aarch64-apple-darwin)
+    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/cfe-aarch64-apple-darwin](https://github.com/YOUR_GITHUB_USERNAME/cfe/releases/download/vX.Y.Z/cfe-aarch64-apple-darwin)
     ```
 
 2.  **Make it executable**:
@@ -124,4 +124,4 @@ grind task run
 
 # 🤖 AI Assisted Code Disclaimer
 
-The source code for **cfe** was partially generated, reviewed, and enhanced using Google's generative AI models. While this assistance significantly accelerated development, the code has been thoroughly reviewed, tested, and audited for security, performance, and correctness by human developers. We are committed to maintaining a high standard of quality for this project.
+The source code for **grind** was partially generated, reviewed, and enhanced using Google's generative AI models. While this assistance significantly accelerated development, the code has been thoroughly reviewed, tested, and audited for security, performance, and correctness by human developers. We are committed to maintaining a high standard of quality for this project.

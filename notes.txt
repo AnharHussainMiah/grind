@@ -1,0 +1,5 @@
+https://search.maven.org/solrsearch/select?q=g:org.postgresql+AND+a:postgresql&rows=200&core=gav&wt=json' "&start=" is offset
+
+https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.7/postgresql-42.7.7.pom (also swap ".pom" with ".jar")
+
+in POM only consider "compile" and "rutime" ignore others

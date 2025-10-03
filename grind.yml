@@ -2,22 +2,19 @@ project:
   groupId: "com.example"
   artifactId: "my-app"
   version: "1.0.0"
-  name: "My Application"
-  description: "A sample Maven project represented in YAML"
+  name: "My App"
+  description: "Update me!"
 
-  dependencies:
-    - groupId: "org.springframework"
-      artifactId: "spring-core"
-      version: "5.3.20"
-      
+  dependencies:      
     - groupId: "junit"
       artifactId: "junit"
       version: "4.13.2"
       scope: "test"
+    
+    - groupId: "org.postgresql"
+      artifactId: "postgresql"
+      version: "42.7.7"
+      scope: "runtime"
 
   tasks:
-    run: "mvn exec:java -Dexec.mainClass=com.example.Main"
-    dev: "mvn clean compile exec:java -Dexec.mainClass=com.example.Main"
-    build: "mvn clean package"
-    test: "mvn test"
     clean: "mvn clean"
