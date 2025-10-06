@@ -22,7 +22,7 @@ struct Dependencies {
     dependency: Vec<Dependency>,
 }
 
-pub async fn handle_install(grind: Grind) {
+pub async fn execute_install(grind: Grind) {
     let resolved = self::resolve_all_deps(grind.project.dependencies).await;
     for dep in resolved {
         if let Err(e) = self::download_jar(&dep).await {
@@ -106,6 +106,8 @@ async fn get_pom(dep: Dependency) -> String {
         let local_path = format!("cache/{}", pom_name);
 
         if Path::new(&local_path).exists() {
+            // TODO: compute the POM's md5 and compare with remote md5 only
+            // use the cache if the remote file has not changed.
             if let Ok(cached) = tokio::fs::read_to_string(local_path).await {
                 return cached;
             }
@@ -185,7 +187,7 @@ async fn download_jar(dep: &Dependency) -> Result<(), DownloadError> {
 
     // ✅ Flattened JAR filename
     let jar_name = format!("{}_{}_{}.jar", dep.groupId, artifact, version);
-    let local_path = format!("lib/{}", jar_name);
+    let local_path = format!("libs/{}", jar_name);
 
     // ✅ Skip if already exists
     if Path::new(&local_path).exists() {
@@ -194,7 +196,7 @@ async fn download_jar(dep: &Dependency) -> Result<(), DownloadError> {
     }
 
     // ✅ Ensure "lib" directory exists
-    fs::create_dir_all("lib").await?;
+    fs::create_dir_all("libs").await?;
 
     // ✅ Maven Central URL
     let url = format!(

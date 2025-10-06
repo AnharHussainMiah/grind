@@ -7,8 +7,10 @@ mod build;
 mod config;
 mod install;
 mod mock;
+mod run;
 mod scaffold;
 
+use crate::build::BuildTarget;
 use crate::config::Grind;
 
 const LOGO: &str = r#"
@@ -37,20 +39,20 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    /// Initializes a new grind project structure
-    Init {
-        /// Name of the project to create
+    /// Scaffolds a new Java project with a grind.yml file
+    New {
+        /// Name of the project to create <NameSpace>/<ProjectName> e.g com.example/HelloWorld
         name: String,
     },
-    /// Install all the external libraries as defined in the grind.yml dependencies
+    /// Download all the external libraries and dependencies as defined in the grind.yml
     Install,
-    /// Builds the project using the configuration in grind.yml
+    /// Compile the project and builds a jar file.
     Build,
-    /// Runs the project (e.g., mvn spring-boot:run)
+    /// Compile and run the project
     Run,
     /// Adds a dependency to the project's grind.yml
     Add {
-        /// List of dependencies to add (e.g., 'spring-boot postgresql-driver')
+        /// List of dependencies to add (e.g., 'spring-boot postgresql')
         dependencies: Vec<String>,
     },
     /// Removes a dependency from the project's grind.yml
@@ -58,6 +60,8 @@ enum Commands {
         /// List of dependencies to remove
         dependencies: Vec<String>,
     },
+    /// Run a custom task as defiend in the grind.yml, e.g grind task clean
+    Task { job: String },
 }
 
 #[tokio::main]
@@ -65,16 +69,17 @@ async fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Init { name } => self::handle_init(&name),
-        Commands::Build => println!("todo -> Build"),
-        Commands::Install => self::install().await,
-        Commands::Run => println!("todo -> Run"),
+        Commands::New { name } => self::handle_new(&name),
+        Commands::Build => self::handle_build(),
+        Commands::Install => self::handle_install().await,
+        Commands::Run => self::handle_run(),
         Commands::Add { dependencies } => println!("todo add deps -> {:#?}", dependencies),
         Commands::Remove { dependencies } => println!("todo remove deps -> {:#?}", dependencies),
+        Commands::Task { job } => println!("todo run task: {}", job),
     }
 }
 
-fn handle_init(name: &str) {
+fn handle_new(name: &str) {
     if let Ok((namespace, artifact_id)) = self::parse_project_name(name) {
         let folder_path = Path::new(artifact_id);
 
@@ -94,9 +99,25 @@ fn handle_init(name: &str) {
     }
 }
 
-async fn install() {
+fn handle_build() {
     if let Some(grind) = self::parse_grind_file() {
-        install::handle_install(grind).await;
+        build::execute_build(&grind, BuildTarget::IncludeJar);
+    } else {
+        println!("⚠️ Error: no grind.yml or invalid grind.yml")
+    }
+}
+
+async fn handle_install() {
+    if let Some(grind) = self::parse_grind_file() {
+        install::execute_install(grind).await;
+    } else {
+        println!("⚠️ Error: no grind.yml or invalid grind.yml")
+    }
+}
+
+fn handle_run() {
+    if let Some(grind) = self::parse_grind_file() {
+        run::execute_run(grind);
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
     }
@@ -118,11 +139,47 @@ fn parse_grind_file() -> Option<Grind> {
 }
 
 fn shell(cmd: &str) -> String {
-    let output = Command::new("sh")
+    // print!("[DEBUG-CMD] {}", cmd);
+    let output = Command::new("bash")
         .arg("-c")
         .arg(cmd)
         .output()
         .expect("failed to execute command");
 
-    String::from_utf8_lossy(&output.stdout).trim().to_string()
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    let mut result = String::new();
+
+    if !stdout.trim().is_empty() {
+        result.push_str(&stdout);
+    }
+
+    if !stderr.trim().is_empty() {
+        result.push_str("\n⚠️ Error:\n");
+        result.push_str(&stderr);
+    }
+
+    result.trim().to_string()
+}
+
+fn ls_with_ext(dir: &str, extension: &str) -> std::io::Result<Vec<String>> {
+    let mut files = Vec::new();
+
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_file() {
+            if let Some(ext) = path.extension() {
+                if ext == extension {
+                    if let Some(file_str) = path.to_str() {
+                        files.push(file_str.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(files)
 }
