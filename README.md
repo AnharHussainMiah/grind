@@ -56,8 +56,8 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 - [x] Install all dependencies
 - [x] Compile and build Jar file
 - [x] Compile and run Project
-- [ ] Run a specific task as define in the `grind.yml` manifest
-- [ ] List all available custom tasks
+- [x] Run a specific task as define in the `grind.yml` manifest
+- [x] List all available custom tasks
 - [ ] Add a dependency
 - [ ] Remove a dependency
 

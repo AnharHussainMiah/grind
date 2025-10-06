@@ -9,6 +9,7 @@ mod install;
 mod mock;
 mod run;
 mod scaffold;
+mod tasks;
 
 use crate::build::BuildTarget;
 use crate::config::Grind;
@@ -75,7 +76,7 @@ async fn main() {
         Commands::Run => self::handle_run(),
         Commands::Add { dependencies } => println!("todo add deps -> {:#?}", dependencies),
         Commands::Remove { dependencies } => println!("todo remove deps -> {:#?}", dependencies),
-        Commands::Task { job } => println!("todo run task: {}", job),
+        Commands::Task { job } => self::handle_task(job),
     }
 }
 
@@ -118,6 +119,14 @@ async fn handle_install() {
 fn handle_run() {
     if let Some(grind) = self::parse_grind_file() {
         run::execute_run(grind);
+    } else {
+        println!("⚠️ Error: no grind.yml or invalid grind.yml")
+    }
+}
+
+fn handle_task(job: String) {
+    if let Some(grind) = self::parse_grind_file() {
+        tasks::execute_task(grind, job);
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
     }

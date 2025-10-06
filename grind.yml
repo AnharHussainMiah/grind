@@ -17,4 +17,5 @@ project:
       scope: "runtime"
 
   tasks:
-    clean: "mvn clean"
+    clean: "ls -l"
+    info: "java --help"
