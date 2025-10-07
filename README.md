@@ -6,11 +6,11 @@
 
 ## 🚀 More Coffee, Less XML and configuration
 
-Compared to modern build tools such as **cargo** and **npm** Java build tools feel outdated and overly complex, and they seem to be relegated to the background only to be interfaced by the IDE or CI/CD tooling.
+Compared to modern build tools such as **cargo** and **npm** Java build tools feel outdated and overly complex, and they seem to be relegated to the background only to be used by the IDE or CI/CD tooling.
 
-**grind** is a blazing-fast, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools?
+**grind** is a hassle free, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools?
 
-**grind** simplifies your project workflow by introducing the **`grind.yml`** manifest, providing a single consistent source of truth for all your project. Write less XML or build configurations, manage more efficiently, and get back to writing code!
+**grind** simplifies your project workflow by introducing the **`grind.yml`** manifest, providing a single consistent source of truth for all your projects. Write less XML or build configurations, manage more efficiently, and get back to writing code!
 
 **TL;DR: grind the npm of Java**
 
@@ -35,10 +35,10 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
     ```bash
     # For Linux (x86_64)
-    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/cfe-x86_64-unknown-linux-gnu](https://github.com/YOUR_GITHUB_USERNAME/grind/releases/download/vX.Y.Z/cfe-x86_64-unknown-linux-gnu)
+    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/grind-x86_64-unknown-linux-gnu](https://github.com/anharhussainmiah/grind/releases/download/vX.Y.Z/grind-x86_64-unknown-linux-gnu)
 
     # OR for macOS (Apple Silicon/M-series)
-    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/cfe-aarch64-apple-darwin](https://github.com/YOUR_GITHUB_USERNAME/grind/releases/download/vX.Y.Z/cfe-aarch64-apple-darwin)
+    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/grind-aarch64-apple-darwin](https://github.com/anharhussainmiah/grind/releases/download/vX.Y.Z/grind-aarch64-apple-darwin)
     ```
 
 2.  **Make it executable**:
@@ -71,7 +71,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
 ## 💡 Basic Usage Examples
 
-Once installed, managing your Maven projects is only a single command away.
+Once installed, managing your Java projects is only a single command away.
 
 ```shell
                      /$$                 /$$
@@ -109,12 +109,12 @@ Options:
 
 ### 1. Initialize a New Project
 
-Creates a new directory and project stucture, and the essential `grind.yml` manifest file. Type the new project using the format `<groupId>/<artifactId>`
+Creates a new directory and project stucture, and the essential `grind.yml` manifest file. Type the new project name using the format `<groupId>/<artifactId>`
 
 ```bash
-# Creates a new directory named 'payments-api' and initializes files inside it
+# Creates a new directory named 'PaymentsApi' and initialises files inside it
 grind new com.example/PaymentsApi
-cd payments-api
+cd PaymentsApi
 ```
 
 ## Output
@@ -137,12 +137,12 @@ project:
     clean: "rm -rf target/"
 ```
 
-### 2. Compile, build, and create a Jar file
+### 2. Install all dependencies
 
 Runs the build process
 
 ```bash
-grind build
+grind install
 ```
 
 ### 3. Add Dependencies
@@ -167,6 +167,29 @@ Executes the project using the configured settings.
 
 ```bash
 grind run
+```
+
+### 6. Compile and Package up a final Jar executable
+
+Executes the project using the configured settings.
+
+```bash
+grind build
+```
+
+Your jar will be available for example at `build/PaymentsApi.jar`
+
+### 7. Optional run custom tasks
+
+Much like the tasks that can be set in the `package.json` grind also has a similar feature, you can list the current available task as follows:
+
+```shell
+grind task list
+available tasks:
+
+ - info
+ - clean
+
 ```
 
 ### Dependencies

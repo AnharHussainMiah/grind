@@ -1,0 +1,92 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*" # Triggers only on version tags like v1.0.0
+
+jobs:
+  build-linux:
+    name: Build Linux (x86_64-unknown-linux-musl)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-musl
+          override: true
+
+      - name: Install musl tools
+        run: sudo apt-get update && sudo apt-get install musl-tools
+
+      - name: Build
+        run: cargo build --release --target x86_64-unknown-linux-musl
+
+      - name: Rename binary
+        run: |
+          mkdir dist
+          cp target/x86_64-unknown-linux-musl/release/grind dist/grind-x86_64-unknown-linux-musl
+          chmod +x dist/grind-x86_64-unknown-linux-musl
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binary
+          path: dist/grint-x86_64-unknown-linux-musl
+
+  build-macos:
+    name: Build macOS (x86_64)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Rename binary
+        run: |
+          mkdir dist
+          cp target/release/grind dist/grind-x86_64-apple-darwin
+          chmod +x dist/grind-x86_64-apple-darwin
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-binary
+          path: dist/grind-x86_64-apple-darwin
+
+  release:
+    name: Create GitHub Release
+    needs: [build-linux, build-macos]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-binary
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-binary
+          path: dist
+
+      - name: Display downloaded files
+        run: ls -lh dist
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/grind-x86_64-unknown-linux-musl
+            dist/grind-x86_64-apple-darwin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
