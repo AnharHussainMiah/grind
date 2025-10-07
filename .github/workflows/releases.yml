@@ -3,7 +3,7 @@ name: Build & Release
 on:
   push:
     tags:
-      - "v*" # Triggers only on version tags like v1.0.0
+      - "*"
 
 jobs:
   build-linux:
