@@ -1,21 +1,22 @@
 project:
-  groupId: "com.example"
-  artifactId: "my-app"
-  version: "1.0.0"
-  name: "My App"
-  description: "Update me!"
-
-  dependencies:      
-    - groupId: "junit"
-      artifactId: "junit"
-      version: "4.13.2"
-      scope: "test"
-    
-    - groupId: "org.postgresql"
-      artifactId: "postgresql"
-      version: "42.7.7"
-      scope: "runtime"
-
+  groupId: com.example
+  artifactId: my-app
+  version: 1.0.0
+  name: My App
+  description: Update me!
+  dependencies:
+  - groupId: junit
+    artifactId: junit
+    version: 4.13.2
+    scope: test
+  - groupId: org.postgresql
+    artifactId: postgresql
+    version: 42.7.7
+    scope: runtime
+  - groupId: org.postgresql
+    artifactId: postgresql
+    version: 42.7.7
+    scope: runtime
   tasks:
-    clean: "ls -l"
-    info: "java --help"
+    info: java --help
+    clean: ls -l

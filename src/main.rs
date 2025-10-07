@@ -6,6 +6,7 @@ use std::process::Command;
 mod build;
 mod config;
 mod install;
+mod manage;
 mod mock;
 mod run;
 mod scaffold;
@@ -26,9 +27,9 @@ const LOGO: &str = r#"
  /$$  \ $$                                  
 |  $$$$$$/                                  
  \______/                                   
-           
-        Grind hard, code harder v0.0.1
-          - "builds, without the headache"
+
+        - "builds, without the headache"
+                    v0.2.0
 "#;
 
 #[derive(Parser, Debug)]
@@ -54,12 +55,12 @@ enum Commands {
     /// Adds a dependency to the project's grind.yml
     Add {
         /// List of dependencies to add (e.g., 'spring-boot postgresql')
-        dependencies: Vec<String>,
+        deps: Vec<String>,
     },
     /// Removes a dependency from the project's grind.yml
     Remove {
         /// List of dependencies to remove
-        dependencies: Vec<String>,
+        deps: Vec<String>,
     },
     /// Run a custom task as defiend in the grind.yml, e.g grind task clean
     Task { job: String },
@@ -74,8 +75,8 @@ async fn main() {
         Commands::Build => self::handle_build(),
         Commands::Install => self::handle_install().await,
         Commands::Run => self::handle_run(),
-        Commands::Add { dependencies } => println!("todo add deps -> {:#?}", dependencies),
-        Commands::Remove { dependencies } => println!("todo remove deps -> {:#?}", dependencies),
+        Commands::Add { deps } => self::handle_add(deps).await,
+        Commands::Remove { deps } => self::handle_remove(deps).await,
         Commands::Task { job } => self::handle_task(job),
     }
 }
@@ -127,6 +128,22 @@ fn handle_run() {
 fn handle_task(job: String) {
     if let Some(grind) = self::parse_grind_file() {
         tasks::execute_task(grind, job);
+    } else {
+        println!("⚠️ Error: no grind.yml or invalid grind.yml")
+    }
+}
+
+async fn handle_add(deps: Vec<String>) {
+    if let Some(grind) = self::parse_grind_file() {
+        manage::execute_add(grind, deps).await;
+    } else {
+        println!("⚠️ Error: no grind.yml or invalid grind.yml")
+    }
+}
+
+async fn handle_remove(deps: Vec<String>) {
+    if let Some(grind) = self::parse_grind_file() {
+        manage::execute_remove(grind, deps).await;
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
     }

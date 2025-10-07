@@ -18,7 +18,7 @@ pub fn execute_task(grind: Grind, task: String) {
         .find(|(k, _)| k.eq_ignore_ascii_case(&task));
 
     if let Some((k, v)) = target {
-        println!("==> executing task [{}]", task);
+        println!("==> executing task [{}]", k);
         let out = shell(&v);
         println!("{}", out);
     } else {

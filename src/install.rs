@@ -9,7 +9,7 @@ use std::path::Path;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
-use crate::mock::FAKE_POM;
+// use crate::mock::FAKE_POM;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -31,7 +31,7 @@ pub async fn execute_install(grind: Grind) {
     }
 }
 
-async fn resolve_all_deps(initial_deps: Vec<Dependency>) -> HashSet<Dependency> {
+pub async fn resolve_all_deps(initial_deps: Vec<Dependency>) -> HashSet<Dependency> {
     let mut resolved = HashSet::new();
 
     let mut to_visit = initial_deps
@@ -154,12 +154,6 @@ fn build_pom_url(group: &str, artifact: &str, version: &str) -> String {
         gpath, artifact, version, artifact, version
     )
 }
-
-// let query = format!(r#"g:"{}" AND a:"{}""#, group, artifact);
-// let url = format!(
-//     "https://search.maven.org/solrsearch/select?q={}&rows=200&core=gav&wt=json",
-//     urlencoding::encode(&query)
-// );
 
 #[derive(Debug)]
 enum DownloadError {
