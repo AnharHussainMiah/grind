@@ -8,7 +8,7 @@
 
 Compared to modern build tools such as **cargo** and **npm** Java build tools feel outdated and overly complex, and they seem to be relegated to the background only to be interfaced by the IDE or CI/CD tooling.
 
-**grind** is a blazing-fast, Rust powered command line interface designed to take the friction and UX out of current Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools?
+**grind** is a blazing-fast, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools?
 
 **grind** simplifies your project workflow by introducing the **`grind.yml`** manifest, providing a single consistent source of truth for all your project. Write less XML or build configurations, manage more efficiently, and get back to writing code!
 
