@@ -35,7 +35,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-binary
-          path: dist/grint-x86_64-unknown-linux-musl
+          path: dist/grind-x86_64-unknown-linux-musl
 
   build-macos:
     name: Build macOS (x86_64)
