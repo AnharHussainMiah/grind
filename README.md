@@ -1,6 +1,6 @@
 # ☕ Grind: Builds, without the headache
 
-![Grind](logo.svg)
+![Grind](logo.png)
 
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/anharhussainmiah/grind?style=for-the-badge&logo=github&label=Latest%20Release)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
