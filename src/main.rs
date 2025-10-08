@@ -1,7 +1,5 @@
 use clap::{Parser, Subcommand};
-use std::fs;
 use std::path::Path;
-use std::process::Command;
 
 mod build;
 mod config;
@@ -11,6 +9,7 @@ mod mock;
 mod run;
 mod scaffold;
 mod tasks;
+mod util;
 
 use crate::build::BuildTarget;
 use crate::config::Grind;
@@ -102,7 +101,7 @@ fn handle_new(name: &str) {
 }
 
 fn handle_build() {
-    if let Some(grind) = self::parse_grind_file() {
+    if let Some(grind) = util::parse_grind_file() {
         build::execute_build(&grind, BuildTarget::IncludeJar);
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
@@ -110,7 +109,7 @@ fn handle_build() {
 }
 
 async fn handle_install() {
-    if let Some(grind) = self::parse_grind_file() {
+    if let Some(grind) = util::parse_grind_file() {
         install::execute_install(grind).await;
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
@@ -118,7 +117,7 @@ async fn handle_install() {
 }
 
 fn handle_run() {
-    if let Some(grind) = self::parse_grind_file() {
+    if let Some(grind) = util::parse_grind_file() {
         run::execute_run(grind);
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
@@ -126,7 +125,7 @@ fn handle_run() {
 }
 
 fn handle_task(job: String) {
-    if let Some(grind) = self::parse_grind_file() {
+    if let Some(grind) = util::parse_grind_file() {
         tasks::execute_task(grind, job);
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
@@ -134,7 +133,7 @@ fn handle_task(job: String) {
 }
 
 async fn handle_add(deps: Vec<String>) {
-    if let Some(grind) = self::parse_grind_file() {
+    if let Some(grind) = util::parse_grind_file() {
         manage::execute_add(grind, deps).await;
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
@@ -142,7 +141,7 @@ async fn handle_add(deps: Vec<String>) {
 }
 
 async fn handle_remove(deps: Vec<String>) {
-    if let Some(grind) = self::parse_grind_file() {
+    if let Some(grind) = util::parse_grind_file() {
         manage::execute_remove(grind, deps).await;
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
@@ -156,56 +155,4 @@ fn parse_project_name(input: &str) -> Result<(&str, &str), &'static str> {
         (Some(first), Some(second), None) => Ok((first, second)),
         _ => Err("Input must contain exactly one '/' and two non-empty parts"),
     }
-}
-
-fn parse_grind_file() -> Option<Grind> {
-    let grind_raw = fs::read_to_string("grind.yml").unwrap();
-    let parsed: Grind = serde_yaml::from_str(&grind_raw).unwrap();
-    Some(parsed)
-}
-
-fn shell(cmd: &str) -> String {
-    // print!("[DEBUG-CMD] {}", cmd);
-    let output = Command::new("bash")
-        .arg("-c")
-        .arg(cmd)
-        .output()
-        .expect("failed to execute command");
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
-
-    let mut result = String::new();
-
-    if !stdout.trim().is_empty() {
-        result.push_str(&stdout);
-    }
-
-    if !stderr.trim().is_empty() {
-        result.push_str("\n⚠️ Error:\n");
-        result.push_str(&stderr);
-    }
-
-    result.trim().to_string()
-}
-
-fn ls_with_ext(dir: &str, extension: &str) -> std::io::Result<Vec<String>> {
-    let mut files = Vec::new();
-
-    for entry in fs::read_dir(dir)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_file() {
-            if let Some(ext) = path.extension() {
-                if ext == extension {
-                    if let Some(file_str) = path.to_str() {
-                        files.push(file_str.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    Ok(files)
 }

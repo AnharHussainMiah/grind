@@ -5,7 +5,6 @@ use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
 
-
 pub async fn execute_add(grind: Grind, deps: Vec<String>) {
     let mut candidates = Vec::new();
 
@@ -50,9 +49,8 @@ pub async fn execute_add(grind: Grind, deps: Vec<String>) {
     }
 }
 
-
 pub async fn execute_remove(mut grind: Grind, deps: Vec<String>) {
-    let mut candidates = Vec::new(); 
+    let mut candidates = Vec::new();
 
     for dep in deps {
         let mut group_id = String::new();
@@ -66,15 +64,17 @@ pub async fn execute_remove(mut grind: Grind, deps: Vec<String>) {
             }
         }
 
-        if let Some(index) = grind.project.dependencies.iter().position(|x| x.groupId == group_id && x.artifactId == artifact) {
+        if let Some(index) = grind
+            .project
+            .dependencies
+            .iter()
+            .position(|x| x.groupId == group_id && x.artifactId == artifact)
+        {
             println!("⚙️ preparing to remove {} {}", group_id, artifact);
             candidates.push(grind.project.dependencies[index].clone());
             grind.project.dependencies.remove(index);
         } else {
-             println!(
-                    "❌ WARNING: no match found for {}/{}",
-                    group_id, artifact
-                );
+            println!("❌ WARNING: no match found for {}/{}", group_id, artifact);
         }
     }
     // resolve all deps to remove
@@ -98,7 +98,7 @@ pub async fn execute_remove(mut grind: Grind, deps: Vec<String>) {
 }
 
 fn delete_jar(dep: &Dependency) -> Result<(), std::io::Error> {
-    let group_path = dep.groupId.replace('.', "/");
+    //let group_path = dep.groupId.replace('.', "/");
     let artifact = &dep.artifactId;
     let version = &dep.version;
 
@@ -111,8 +111,6 @@ fn delete_jar(dep: &Dependency) -> Result<(), std::io::Error> {
 
     Ok(())
 }
-
-
 
 #[derive(Debug, Deserialize)]
 struct SolrResponse {

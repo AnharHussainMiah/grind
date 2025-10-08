@@ -26,7 +26,7 @@ pub async fn execute_install(grind: Grind) {
     let resolved = self::resolve_all_deps(grind.project.dependencies).await;
     for dep in resolved {
         if let Err(e) = self::download_jar(&dep).await {
-            println!("==> Failed to download {:?}: {:?}", dep, e);
+            println!("⚠️ Failed to download [{:?}]: {:?}", dep, e);
         }
     }
 }
@@ -155,26 +155,7 @@ fn build_pom_url(group: &str, artifact: &str, version: &str) -> String {
     )
 }
 
-#[derive(Debug)]
-enum DownloadError {
-    Reqwest(reqwest::Error),
-    Io(std::io::Error),
-    Http(reqwest::StatusCode),
-}
-
-impl From<reqwest::Error> for DownloadError {
-    fn from(err: reqwest::Error) -> Self {
-        DownloadError::Reqwest(err)
-    }
-}
-
-impl From<std::io::Error> for DownloadError {
-    fn from(err: std::io::Error) -> Self {
-        DownloadError::Io(err)
-    }
-}
-
-async fn download_jar(dep: &Dependency) -> Result<(), DownloadError> {
+async fn download_jar(dep: &Dependency) -> Result<(), String> {
     let group_path = dep.groupId.replace('.', "/");
     let artifact = &dep.artifactId;
     let version = &dep.version;
@@ -190,7 +171,9 @@ async fn download_jar(dep: &Dependency) -> Result<(), DownloadError> {
     }
 
     // ✅ Ensure "lib" directory exists
-    fs::create_dir_all("libs").await?;
+    fs::create_dir_all("libs")
+        .await
+        .map_err(|e| e.to_string())?;
 
     // ✅ Maven Central URL
     let url = format!(
@@ -200,15 +183,20 @@ async fn download_jar(dep: &Dependency) -> Result<(), DownloadError> {
 
     println!("📥 Downloading: {}", url);
 
-    let resp = reqwest::get(&url).await?;
+    let resp = reqwest::get(&url).await.map_err(|e| e.to_string())?;
 
     if !resp.status().is_success() {
-        return Err(DownloadError::Http(resp.status()));
+        return Err(format!(
+            "Unable to download, HTTP Status Code: {}",
+            resp.status()
+        ));
     }
 
-    let bytes = resp.bytes().await?;
-    let mut file = fs::File::create(&local_path).await?;
-    file.write_all(&bytes).await?;
+    let bytes = resp.bytes().await.map_err(|e| e.to_string())?;
+    let mut file = fs::File::create(&local_path)
+        .await
+        .map_err(|e| e.to_string())?;
+    file.write_all(&bytes).await.map_err(|e| e.to_string())?;
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use crate::Grind;
-use crate::ls_with_ext;
-use crate::shell;
+use crate::util::ls_with_ext;
+use crate::util::shell;
 use std::fs;
 
 #[derive(PartialEq)]

@@ -1,5 +1,5 @@
 use crate::Grind;
-use crate::shell;
+use crate::util::shell;
 
 pub fn execute_task(grind: Grind, task: String) {
     if task.to_lowercase() == "list" {

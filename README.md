@@ -1,5 +1,7 @@
 # ☕ Grind: Builds, without the headache
 
+![Grind](logo.svg)
+
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/anharhussainmiah/grind?style=for-the-badge&logo=github&label=Latest%20Release)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
 ![Built with Rust](https://img.shields.io/badge/Built%20with-Rust-orange?style=for-the-badge&logo=rust)
@@ -8,20 +10,22 @@
 
 Compared to modern build tools such as **cargo** and **npm** Java build tools feel outdated and overly complex, and they seem to be relegated to the background only to be used by the IDE or CI/CD tooling.
 
-**grind** is a hassle free, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools?
+**grind** is a hassle free, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools? Then maybe it's time to try a new tool!
 
-**grind** simplifies your project workflow by introducing the **`grind.yml`** manifest, providing a single consistent source of truth for all your projects. Write less XML or build configurations, manage more efficiently, and get back to writing code!
+**grind** simplifies your project workflow by introducing the **`grind.yml`** manifest, providing a single consistent source of truth for all your projects. Write less XML or build configurations, manage builds more efficiently, and get back to writing code!
 
 **TL;DR: grind the npm of Java**
 
 ## ✨ Main Features
 
-| Feature                      | Description                                                                                | CLI Example                           |
-| :--------------------------- | :----------------------------------------------------------------------------------------- | :------------------------------------ |
-| **☕ Project Scaffolding**   | Quickly bootstrap a new Java project structure with a pre-configured `grind.yml` manifest. | `grind new com.example/HelloWorld`    |
-| **⚙️ Easy Jar Builds**       | Compile and build your production Jar                                                      | `grind build`                         |
-| **➕ Dependency Management** | Add and remove project dependencies directly from the command line                         | `grind add org.postgresql/postgresql` |
-| **✅ Task Execution**        | The `grind.yml` can contain many custom tasks, similar to `package.json`                   | `grind task clean`                    |
+| Feature                        | Description                                                                      | CLI Example                           |
+| :----------------------------- | :------------------------------------------------------------------------------- | :------------------------------------ |
+| **☕ Project Scaffolding**     | Quickly bootstrap a new Java project with a pre-configured `grind.yml` manifest. | `grind new com.example/HelloWorld`    |
+| **📥 Easy Dependency Install** | Compile and build your production Jar                                            | `grind install`                       |
+| **▶️ Quickly Run Project**     | Compile your code and run it                                                     | `grind run`                           |
+| **⚙️ Production Jar Builds**   | Compile and build your production Jar                                            | `grind build`                         |
+| **➕ Dependency Management**   | Add and remove project dependencies directly from the command line               | `grind add org.postgresql/postgresql` |
+| **✅ Task Execution**          | The `grind.yml` can contain many custom tasks, similar to `package.json`         | `grind task clean`                    |
 
 ## 📥 Installation
 
@@ -61,7 +65,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 - [x] Add a dependency
 - [x] Remove a dependency
 
-### Longer Term goals
+## Long Term Goals
 
 - [ ] Test Runner
 - [ ] Manage Java SDK versions a bit like "Node Version Manager" or "rustup"
@@ -107,9 +111,9 @@ Options:
   -V, --version  Print version
 ```
 
-### 1. Initialize a New Project
+### 1. Create a New Project
 
-Creates a new directory and project stucture, and the essential `grind.yml` manifest file. Type the new project name using the format `<groupId>/<artifactId>`
+To create a new project, type the project name using the format `<groupId>/<artifactId>`, this creates a new directory and project stucture, and the `grind.yml` manifest file.
 
 ```bash
 # Creates a new directory named 'PaymentsApi' and initialises files inside it
@@ -139,7 +143,7 @@ project:
 
 ### 2. Install all dependencies
 
-Runs the build process
+To install all your projects dependencies that are defined in the `grind.yml` file, simple invoke the following:
 
 ```bash
 grind install
@@ -147,10 +151,14 @@ grind install
 
 ### 3. Add Dependencies
 
-Specify one or more dependencies to automatically insert them into your `grind.yml`, use the format `<groupId>/<artifactId>`
+To add one or more dependency to your project invoke the `add` sub command, make sure to use the format `<groupId>/<artifactId>`:
 
 ```bash
 grind add org.postgresql/posgresql
+# you can even pin a specific version
+grind add org.postgresql/posgresql@42.7.7
+# you can add multiple dependecies at the same time, just separate by space
+grind add org.jsoup/jsoup org.apache.commons/commons-csv
 ```
 
 ### 4. Remove Dependecnies
@@ -163,7 +171,7 @@ grind remove org.postgresql/posgresql
 
 ### 5. Run the Project
 
-Executes the project using the configured settings.
+To compile and run your project, simpley invoke the following:
 
 ```bash
 grind run
@@ -171,13 +179,16 @@ grind run
 
 ### 6. Compile and Package up a final Jar executable
 
-Executes the project using the configured settings.
+To build your production `jar` simply invoke the following:
 
 ```bash
 grind build
 ```
 
-Your jar will be available for example at `build/PaymentsApi.jar`
+Your compiled and package `jar` will be available in the `build/` folder, however keep in mind because this is not
+a "fat jar" or "uber jar", your dependecies which are located in the `libs/` folder would need to be relative to where the `jar` is.
+
+So for production you would need to include both your `jar` file as well as the `libs/` folder.
 
 ### 7. Optional run custom tasks
 
@@ -192,6 +203,20 @@ available tasks:
 
 ```
 
+to create a task, simply edit your `grind.yml` e.g:
+
+```yaml
+tasks:
+  clean: "rm -rf target/"
+  copy-jar: "cp build/*.jar ."
+```
+
+then to run your custom task just do:
+
+```shell
+grind task copy-jar
+```
+
 ### Dependencies
 
 Grind assumes the following are already installed on your machine:
@@ -201,14 +226,20 @@ Grind assumes the following are already installed on your machine:
 
 ## No FAT Jars!
 
-I was deciding on if `grind` should be able to create "fat Jars", but then I realised that in modern development we end up creating containers images. Creating a fat jar doesn't make all that sense, AND you potentially lose out on caching!
+I was deciding on if `grind` should be able to create "fat Jars", but then I realised that in modern development we end up creating container images. In that context creating a fat jar doesn't make all that sense! AND you potentially lose out on caching!
 
-Instead of creating a fat jar, just copy the `lib` folder, you end up with a single image anyway, but with the advantage of proper caching meaning next time your update your images, it will only update the actual application layer which could be kilobytes vs hundreds of megabytes!
+Instead of creating a fat jar, just copy the `libs` folder, you'll end up with a single container image anyway, but with the advantage of proper caching layers meaning, next time your update your images, it will only update the actual application layer which could be just a few kilobytes vs hundreds of megabytes!
 
 ## No Windows Support.
 
-Techinally `grind` could be made to support Windows, but I don't have the energy to make that happen! It's open source and I would massively welcome all contributions for any feature(s) that you would really like to see
+Techinally `grind` could be made to support Windows _(swithing out bash for poweshell, and minor changes in classpaths)_, but I don't have the energy to make that happen! It's open source and I would massively welcome all contributions for any feature(s) that you would really like to see.
 
 ## Coding Design
 
 I following the `YAGNI` and `KISS` as well as "Doing the minimal, to make it work"
+
+## Contributions
+
+I'm open to contributions, suggestions, and ideas, etc but please be kind!
+
+If you've found this project helpful, please leave a 🌟 or help spread the word!

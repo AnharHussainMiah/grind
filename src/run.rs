@@ -1,6 +1,6 @@
 use crate::Grind;
 use crate::build;
-use crate::shell;
+use crate::util::shell;
 
 use crate::BuildTarget;
 
