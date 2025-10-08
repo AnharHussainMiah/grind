@@ -5,6 +5,9 @@ on:
     tags:
       - "*"
 
+permissions:
+  contents: write
+
 jobs:
   build-linux:
     name: Build Linux (x86_64-unknown-linux-musl)
