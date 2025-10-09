@@ -21,11 +21,11 @@ Compared to modern build tools such as **cargo** and **npm** Java build tools fe
 | Feature                        | Description                                                                      | CLI Example                           |
 | :----------------------------- | :------------------------------------------------------------------------------- | :------------------------------------ |
 | **☕ Project Scaffolding**     | Quickly bootstrap a new Java project with a pre-configured `grind.yml` manifest. | `grind new com.example/HelloWorld`    |
-| **📥 Easy Dependency Install** | Compile and build your production Jar                                            | `grind install`                       |
+| **📥 Easy Dependency Install** | Install all your projects dependencies                                           | `grind install`                       |
 | **▶️ Quickly Run Project**     | Compile your code and run it                                                     | `grind run`                           |
 | **⚙️ Production Jar Builds**   | Compile and build your production Jar                                            | `grind build`                         |
 | **➕ Dependency Management**   | Add and remove project dependencies directly from the command line               | `grind add org.postgresql/postgresql` |
-| **✅ Task Execution**          | The `grind.yml` can contain many custom tasks, similar to `package.json`         | `grind task clean`                    |
+| **✅ Task Execution**          | Define and run custom tasks much like `package.json`                             | `grind task clean`                    |
 
 ## 📥 Installation
 
@@ -39,7 +39,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
     ```bash
     # For Linux (x86_64)
-    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/grind-x86_64-unknown-linux-gnu](https://github.com/anharhussainmiah/grind/releases/download/vX.Y.Z/grind-x86_64-unknown-linux-gnu)
+    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/grind-x86_64-unknown-linux-musl](https://github.com/anharhussainmiah/grind/releases/download/vX.Y.Z/grind-x86_64-unknown-linux-musl)
 
     # OR for macOS (Apple Silicon/M-series)
     wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/grind-aarch64-apple-darwin](https://github.com/anharhussainmiah/grind/releases/download/vX.Y.Z/grind-aarch64-apple-darwin)
@@ -58,6 +58,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
 - [x] Scaffold New Project
 - [x] Install all dependencies
+- [ ] ⚠️ Correctly handle super POM via `<parent>`, `BOM` imports, and `<dependencyManagement>` resolution
 - [x] Compile and build Jar file
 - [x] Compile and run Project
 - [x] Run a specific task as define in the `grind.yml` manifest
@@ -236,7 +237,8 @@ Techinally `grind` could be made to support Windows _(swithing out bash for powe
 
 ## Coding Design
 
-I following the `YAGNI` and `KISS` as well as "Doing the minimal, to make it work"
+I'm following the `YAGNI` and `KISS` as well as _"Deliver the simplest solution that works."_ approach to software design. I also do not like lots of nested folders, so I try to organise the codes into their own
+modules, the fewer the indirection the easier it is to reason about the code.
 
 ## Contributions
 

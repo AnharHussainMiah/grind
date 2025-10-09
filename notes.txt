@@ -13,3 +13,46 @@ Main-Class: com.example.Main
 Class-Path: lib/gson-2.10.1.jar lib/foo.jar etc
 
 jar cfm app.jar manifest.txt -C out .
+
+# Version Manager
+
+(https://api.adoptium.net/q/swagger-ui)
+
+list of versions:
+
+curl -X 'GET' \
+  'https://api.adoptium.net/v3/info/available_releases' \
+  -H 'accept: application/json'
+
+get link of download
+
+curl -X 'GET' \
+  'https://api.adoptium.net/v3/assets/latest/25/hotspot?architecture=x64&image_type=jdk&os=linux&vendor=eclipse' \
+  -H 'accept: application/json'
+
+  download all versions into some folder and then have a "current" symlink pointing to the path of the version
+  we want to run
+
+  e.g
+
+  /jdks
+   - current (symlink) -> v1
+   - v1/
+   - v2/
+   - v3/
+
+Then PREFIX the $PATH e.g `export PATH="/jdkds/current:$PATH", prefixing should "over ride" any system installed version.
+
+if the prefix is removed then it will revert back to the system installed version
+
+https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html
+
+---
+
+Parent Resolution:
+  * walk "up" the parent until we reach the "super" POM
+  * walk down collecting all the <dependencyManagement> into a map (+ along with any potential Dependency? unlikely but could happen)
+    - if we have a "BOM" with import scope, then that needs to be "merged" into the <dependencyManagement>
+  * child values override parent values of the same item
+  * finally apply property find/replace
+  * finally use this "collated" <dependencyManagement> Map to fill out any depedency that doesn't have a version
