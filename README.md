@@ -56,15 +56,18 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
 ## Current Progress/Road Map
 
-- [x] Scaffold New Project
-- [x] Install all dependencies
-- [ ] ⚠️ Correctly handle super POM via `<parent>`, `BOM` imports, and `<dependencyManagement>` resolution
-- [x] Compile and build Jar file
-- [x] Compile and run Project
-- [x] Run a specific task as define in the `grind.yml` manifest
-- [x] List all available custom tasks
-- [x] Add a dependency
-- [x] Remove a dependency
+- [x] ✅ Scaffold New Project
+- [x] ⏳ Install all dependencies
+  - [x] ✅ Use "newest" strategy for artifact collisions
+  - [x] ✅ Generate "grind.lock" file, re-generate on add/remove or mismatch on "install"
+  - [ ] ⚠️ Correctly handle super POM via `<parent>`, `BOM` imports, and `<dependencyManagement>` resolution
+  - [ ] ⚠️ Handle exclusions
+- [x] ✅ Compile and build Jar file
+- [x] ✅ Compile and run Project
+- [x] ✅ Run a specific task as define in the `grind.yml` manifest
+- [x] ✅ List all available custom tasks
+- [x] ✅ Add a dependency
+- [x] ✅ Remove a dependency
 
 ## Long Term Goals
 

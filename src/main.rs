@@ -4,6 +4,7 @@ use std::path::Path;
 mod build;
 mod config;
 mod install;
+mod lock;
 mod manage;
 mod mock;
 mod run;
@@ -28,7 +29,7 @@ const LOGO: &str = r#"
  \______/                                   
 
         - "builds, without the headache"
-                    v0.2.0
+                    v0.4.0
 "#;
 
 #[derive(Parser, Debug)]

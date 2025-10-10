@@ -1,7 +1,10 @@
 use crate::Grind;
 use crate::config::Dependency;
+use crate::lock;
 use regex::Regex;
+use semver::Version;
 use serde_xml_rs::from_str;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 
@@ -23,12 +26,28 @@ struct Dependencies {
 }
 
 pub async fn execute_install(grind: Grind) {
-    let resolved = self::resolve_all_deps(grind.project.dependencies).await;
-    for dep in resolved {
+    // first check the lock file
+    if let Ok(locked) = lock::get_lock_file() {
+        if grind.project.dependencies == locked.inputDeps {
+            println!("✅ No dependency changes detected, using grind.lock...");
+            for dep in locked.lockedDeps {
+                if let Err(e) = self::download_jar(&dep).await {
+                    println!("⚠️ Failed to download [{:?}]: {:?}", dep, e);
+                }
+            }
+            return;
+        }
+    }
+    println!("⚙️ need to resolve all dependencies...");
+    let resolved = self::resolve_all_deps(grind.project.dependencies.clone()).await;
+    let resolved = self::fix_collisions(resolved);
+    for dep in &resolved {
         if let Err(e) = self::download_jar(&dep).await {
             println!("⚠️ Failed to download [{:?}]: {:?}", dep, e);
         }
     }
+    // lock deps
+    lock::lock_file(&grind.project.dependencies, &resolved.into_iter().collect());
 }
 
 pub async fn resolve_all_deps(initial_deps: Vec<Dependency>) -> HashSet<Dependency> {
@@ -199,4 +218,122 @@ async fn download_jar(dep: &Dependency) -> Result<(), String> {
     file.write_all(&bytes).await.map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+fn fix_collisions(deps: HashSet<Dependency>) -> HashSet<Dependency> {
+    /* ---------------------------------------------------------------------------------------------
+    modern build tools and including the latest versions of maven use the "newest" version wins
+    when it comes to dependency "collisions" (different versions of the same artifact).
+
+    It is better to go with the newest otherwise one could regress and introduce bugs etc.
+
+    However this needs to be combined with a "lock" file to "freeze" the fully resolved tree, this
+    makes it deterministic and reproducible.
+    --------------------------------------------------------------------------------------------- */
+    let mut latest_versions: HashMap<(String, String), Dependency> = HashMap::new();
+
+    for dep in deps {
+        let key = (dep.groupId.clone(), dep.artifactId.clone());
+
+        latest_versions
+            .entry(key)
+            .and_modify(|existing| {
+                if self::is_version_newer(&existing.version, &dep.version) {
+                    *existing = dep.clone();
+                }
+            })
+            .or_insert(dep);
+    }
+
+    latest_versions.into_values().collect()
+}
+
+fn is_version_newer(source: &str, target: &str) -> bool {
+    // source < targer
+    if let (Ok(s), Ok(t)) = (Version::parse(source), Version::parse(target)) {
+        return s < t;
+    }
+    false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Dependency;
+    // use semver::Version;
+
+    #[test]
+    fn test_deduplicate_dependencies() {
+        let mut deps = HashSet::new();
+
+        deps.insert(Dependency {
+            groupId: "com.example".to_string(),
+            artifactId: "lib1".to_string(),
+            version: String::from("1.0.0"),
+            scope: None,
+        });
+
+        deps.insert(Dependency {
+            groupId: "com.example".to_string(),
+            artifactId: "lib1".to_string(),
+            version: String::from("2.0.0"), // Should be kept
+            scope: None,
+        });
+
+        deps.insert(Dependency {
+            groupId: "com.example".to_string(),
+            artifactId: "lib2".to_string(),
+            version: String::from("0.9.1"), // Only one, should be kept
+            scope: None,
+        });
+
+        deps.insert(Dependency {
+            groupId: "org.other".to_string(),
+            artifactId: "lib3".to_string(),
+            version: String::from("3.1.4"),
+            scope: None,
+        });
+
+        deps.insert(Dependency {
+            groupId: "org.other".to_string(),
+            artifactId: "lib3".to_string(),
+            version: String::from("3.2.0"), // Should be kept
+            scope: None,
+        });
+
+        let result = fix_collisions(deps);
+
+        // Should contain only 3 dependencies: latest of lib1, lib2, and lib3
+        assert_eq!(result.len(), 3);
+
+        // Check that correct versions are picked
+        let expected = vec![
+            Dependency {
+                groupId: "com.example".to_string(),
+                artifactId: "lib1".to_string(),
+                version: String::from("2.0.0"),
+                scope: None,
+            },
+            Dependency {
+                groupId: "com.example".to_string(),
+                artifactId: "lib2".to_string(),
+                version: String::from("0.9.1"),
+                scope: None,
+            },
+            Dependency {
+                groupId: "org.other".to_string(),
+                artifactId: "lib3".to_string(),
+                version: String::from("3.2.0"),
+                scope: None,
+            },
+        ];
+
+        for dep in expected {
+            assert!(
+                result.contains(&dep),
+                "Missing expected dependency: {:?}",
+                dep
+            );
+        }
+    }
 }
