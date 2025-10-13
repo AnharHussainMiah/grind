@@ -7,6 +7,7 @@ mod install;
 mod lock;
 mod manage;
 mod mock;
+mod pom;
 mod run;
 mod scaffold;
 mod tasks;

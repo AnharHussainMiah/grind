@@ -1,5 +1,6 @@
 use crate::Grind;
 use crate::config::Dependency;
+use crate::pom::Pom;
 use crate::lock;
 use regex::Regex;
 use semver::Version;
@@ -77,29 +78,37 @@ pub async fn resolve_all_deps(initial_deps: Vec<Dependency>) -> HashSet<Dependen
 }
 
 async fn fetch_deps(dep: &Dependency) -> Vec<Dependency> {
-    let mut deps: Vec<Dependency> = Vec::new();
+    let deps: Vec<Dependency> = Vec::new();
 
-    let pom = self::get_pom(dep.clone()).await;
-    if let Ok(mut extracted) = self::extract_dependencies(&pom) {
-        for ex in &mut extracted {
-            if ex.version.contains("$") {
-                // println!("==> resolving version number for {}", ex.artifactId);
-                let cleaned = &ex
-                    .version
-                    .replace("$", "")
-                    .replace("{", "")
-                    .replace("}", "");
-                if let Some(resolved_version) = self::extract_xml_value(&pom, &cleaned) {
-                    ex.version = resolved_version;
-                }
-            }
-        }
-        for ex in extracted {
-            if ex.scope != Some("test".to_string()) || ex.scope == None {
-                deps.push(ex);
-            }
-        }
+    let raw = self::get_pom(dep.clone()).await;
+
+    // we must compute the Effective POM to handle all parent <-> child, Imports, and properties
+
+    if let Ok(pom) = from_str::<Pom>(&raw) {
+
     }
+
+
+    // if let Ok(mut extracted) = self::extract_dependencies(&pom) {
+    //     for ex in &mut extracted {
+    //         if ex.version.contains("$") {
+    //             // println!("==> resolving version number for {}", ex.artifactId);
+    //             let cleaned = &ex
+    //                 .version
+    //                 .replace("$", "")
+    //                 .replace("{", "")
+    //                 .replace("}", "");
+    //             if let Some(resolved_version) = self::extract_xml_value(&pom, &cleaned) {
+    //                 ex.version = resolved_version;
+    //             }
+    //         }
+    //     }
+    //     for ex in extracted {
+    //         if ex.scope != Some("test".to_string()) || ex.scope == None {
+    //             deps.push(ex);
+    //         }
+    //     }
+    // }
     deps
 }
 
@@ -116,7 +125,7 @@ fn extract_dependencies(xml: &str) -> Result<Vec<Dependency>, Box<dyn std::error
     Ok(deps)
 }
 
-async fn get_pom(dep: Dependency) -> String {
+pub async fn get_pom(dep: Dependency) -> String {
     // return FAKE_POM.to_string();
 
     // check cache
