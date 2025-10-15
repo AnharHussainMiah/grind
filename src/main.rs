@@ -30,7 +30,7 @@ const LOGO: &str = r#"
  \______/                                   
 
         - "builds, without the headache"
-                    v0.4.0
+                    v0.6.0
 "#;
 
 #[derive(Parser, Debug)]

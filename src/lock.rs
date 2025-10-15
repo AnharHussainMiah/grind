@@ -23,7 +23,7 @@ pub fn lock_file(input_deps: &Vec<Dependency>, locked_deps: &Vec<Dependency>) {
     };
 
     if let Ok(updated) = serde_yaml::to_string(&lock) {
-        if let Ok(_) = fs::write("grind.lock", updated) {
+        if fs::write("grind.lock", updated).is_ok() {
             println!("🔃 grind.lock synced..");
         }
     }

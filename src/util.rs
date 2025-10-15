@@ -41,11 +41,11 @@ pub fn ls_with_ext(dir: &str, extension: &str) -> std::io::Result<Vec<String>> {
         let path = entry.path();
 
         if path.is_file() {
-            if let Some(ext) = path.extension() {
-                if ext == extension {
-                    if let Some(file_str) = path.to_str() {
-                        files.push(file_str.to_string());
-                    }
+            if let Some(ext) = path.extension()
+                && ext == extension
+            {
+                if let Some(file_str) = path.to_str() {
+                    files.push(file_str.to_string());
                 }
             }
         }

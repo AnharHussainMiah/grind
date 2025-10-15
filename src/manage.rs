@@ -82,12 +82,12 @@ pub async fn execute_remove(mut grind: Grind, deps: Vec<String>) {
     // remove them
     for dep in resolved {
         if let Err(e) = self::delete_jar(&dep) {
-            println!("==> Failed to download {:?}: {:?}", dep, e);
+            println!("❌ Failed to download {:?}: {:?}", dep, e);
         }
     }
     // sync grind.yml
     if let Ok(updated) = serde_yaml::to_string(&grind) {
-        if let Ok(_) = fs::write("grind.yml", updated) {
+        if fs::write("grind.yml", updated).is_ok() {
             println!("🔃 grind.yml synced..");
             // run install again
             install::execute_install(grind).await;
@@ -157,7 +157,7 @@ async fn search_deps(group_id: &str, artifact: &str, version: &str) -> Option<De
             let j = match body {
                 Ok(b) => b,
                 Err(e) => {
-                    println!("ERROR: Unable to extract Reponse Body");
+                    println!("⚠️ ERROR: Unable to extract Reponse Body");
                     e.to_string()
                 }
             };
@@ -181,17 +181,21 @@ async fn search_deps(group_id: &str, artifact: &str, version: &str) -> Option<De
                 });
             }
         }
-        Err(e) => println!("ERROR: {}", e),
+        Err(e) => println!("⚠️ ERROR: {}", e),
     };
 
     None
 }
 
-async fn update_grind(mut grind: Grind, mut candidates: Vec<Dependency>) {
-    grind.project.dependencies.append(&mut candidates);
+async fn update_grind(mut grind: Grind, candidates: Vec<Dependency>) {
+    for dep in candidates {
+        if !grind.project.dependencies.contains(&dep) {
+            grind.project.dependencies.push(dep.clone());
+        }
+    }
 
     if let Ok(updated) = serde_yaml::to_string(&grind) {
-        if let Ok(_) = fs::write("grind.yml", updated) {
+        if fs::write("grind.yml", updated).is_ok() {
             println!("🔃 grind.yml synced..");
 
             install::execute_install(grind).await;

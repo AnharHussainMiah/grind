@@ -21,12 +21,12 @@ pub fn create(namespace: &str, artifact_id: &str) {
     self::create_java_file(namespace, artifact_id);
     self::create_grind_file(namespace, artifact_id);
 
-    println!("");
+    println!();
     println!("🎉🎉 created project {}/ successfully!", artifact_id);
 }
 
 fn create_project_dir(artifact_id: &str) {
-    std::fs::create_dir_all(format!("{}", artifact_id)).unwrap();
+    std::fs::create_dir_all(artifact_id).unwrap();
     println!("==> created project directory [{}/]", artifact_id);
 }
 

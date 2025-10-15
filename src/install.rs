@@ -1,10 +1,9 @@
 use crate::Grind;
 use crate::config::Dependency;
-use crate::pom::Pom;
 use crate::lock;
-use regex::Regex;
+use crate::pom;
+use crate::pom::PomId;
 use semver::Version;
-use serde_xml_rs::from_str;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -14,36 +13,25 @@ use tokio::fs;
 use tokio::io::AsyncWriteExt;
 
 // use crate::mock::FAKE_POM;
-use serde::Deserialize;
-
-#[derive(Debug, Deserialize)]
-struct Project {
-    dependencies: Option<Dependencies>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Dependencies {
-    dependency: Vec<Dependency>,
-}
 
 pub async fn execute_install(grind: Grind) {
     // first check the lock file
-    if let Ok(locked) = lock::get_lock_file() {
-        if grind.project.dependencies == locked.inputDeps {
-            println!("✅ No dependency changes detected, using grind.lock...");
-            for dep in locked.lockedDeps {
-                if let Err(e) = self::download_jar(&dep).await {
-                    println!("⚠️ Failed to download [{:?}]: {:?}", dep, e);
-                }
+    if let Ok(locked) = lock::get_lock_file()
+        && grind.project.dependencies == locked.inputDeps
+    {
+        println!("✅ No dependency changes detected, using grind.lock...");
+        for dep in locked.lockedDeps {
+            if let Err(e) = self::download_jar(&dep).await {
+                println!("⚠️ Failed to download [{:?}]: {:?}", dep, e);
             }
-            return;
         }
+        return;
     }
     println!("⚙️ need to resolve all dependencies...");
     let resolved = self::resolve_all_deps(grind.project.dependencies.clone()).await;
     let resolved = self::fix_collisions(resolved);
     for dep in &resolved {
-        if let Err(e) = self::download_jar(&dep).await {
+        if let Err(e) = self::download_jar(dep).await {
             println!("⚠️ Failed to download [{:?}]: {:?}", dep, e);
         }
     }
@@ -68,6 +56,8 @@ pub async fn resolve_all_deps(initial_deps: Vec<Dependency>) -> HashSet<Dependen
 
         let transitive = self::fetch_deps(&dep).await;
 
+        // println!("DEBUG {:?}", transitive);
+
         for new_dep in transitive {
             if !resolved.contains(&new_dep) {
                 to_visit.push_back(new_dep);
@@ -78,51 +68,44 @@ pub async fn resolve_all_deps(initial_deps: Vec<Dependency>) -> HashSet<Dependen
 }
 
 async fn fetch_deps(dep: &Dependency) -> Vec<Dependency> {
-    let deps: Vec<Dependency> = Vec::new();
+    let mut deps: Vec<Dependency> = Vec::new();
 
-    let raw = self::get_pom(dep.clone()).await;
+    let root_pom_id = PomId {
+        group_id: dep.groupId.clone(),
+        artifact_id: dep.artifactId.clone(),
+        version: dep.version.clone(),
+    };
 
-    // we must compute the Effective POM to handle all parent <-> child, Imports, and properties
+    let mut visited = HashSet::new();
 
-    if let Ok(pom) = from_str::<Pom>(&raw) {
+    println!("ℹ️ Resolving dependencies for {}...", root_pom_id);
 
+    if let Some(rdeps) = pom::get_effective_dependencies(root_pom_id, &mut visited).await {
+        println!("\nℹ️ Found {} effective dependencies:", rdeps.len());
+        for rdep in rdeps {
+            println!(
+                "  - {}:{}:{} (Scope: {})",
+                rdep.group_id,
+                rdep.artifact_id,
+                rdep.version,
+                rdep.scope.as_deref().unwrap_or("compile")
+            );
+
+            if let Some(v) = &rdep.scope
+                && (v.contains("compile") || v.contains("runtime"))
+            {
+                deps.push(Dependency {
+                    groupId: rdep.group_id,
+                    artifactId: rdep.artifact_id,
+                    version: rdep.version,
+                    scope: rdep.scope,
+                })
+            }
+        }
+    } else {
+        println!("⚠️ Could not resolve dependencies.");
     }
-
-
-    // if let Ok(mut extracted) = self::extract_dependencies(&pom) {
-    //     for ex in &mut extracted {
-    //         if ex.version.contains("$") {
-    //             // println!("==> resolving version number for {}", ex.artifactId);
-    //             let cleaned = &ex
-    //                 .version
-    //                 .replace("$", "")
-    //                 .replace("{", "")
-    //                 .replace("}", "");
-    //             if let Some(resolved_version) = self::extract_xml_value(&pom, &cleaned) {
-    //                 ex.version = resolved_version;
-    //             }
-    //         }
-    //     }
-    //     for ex in extracted {
-    //         if ex.scope != Some("test".to_string()) || ex.scope == None {
-    //             deps.push(ex);
-    //         }
-    //     }
-    // }
     deps
-}
-
-fn extract_dependencies(xml: &str) -> Result<Vec<Dependency>, Box<dyn std::error::Error>> {
-    let project: Project = from_str(xml)?;
-
-    let deps = project
-        .dependencies
-        .unwrap_or(Dependencies { dependency: vec![] })
-        .dependency
-        .into_iter()
-        .collect();
-
-    Ok(deps)
 }
 
 pub async fn get_pom(dep: Dependency) -> String {
@@ -142,7 +125,7 @@ pub async fn get_pom(dep: Dependency) -> String {
         }
     }
 
-    println!("==> fetching POM.xml for {}", dep.artifactId);
+    println!("🌎 ==> fetching POM.xml for {}", dep.artifactId);
     if let Ok(response) = reqwest::get(self::build_pom_url(
         &dep.groupId,
         &dep.artifactId,
@@ -159,20 +142,13 @@ pub async fn get_pom(dep: Dependency) -> String {
                 let local_path = format!("cache/{}", pom_name);
                 tokio::fs::write(local_path, b.clone())
                     .await
-                    .unwrap_or_else(|e| eprintln!("Failed to write file: {}", e));
+                    .unwrap_or_else(|e| eprintln!("⚠️ Failed to write file: {}", e));
                 b
             }
             Err(e) => e.to_string(),
         };
     }
     "error!".to_string()
-}
-
-fn extract_xml_value(xml: &str, element: &str) -> Option<String> {
-    let pattern = format!(r"<{e}[^>]*>(.*?)</{e}>", e = regex::escape(element));
-    let re = Regex::new(&pattern).ok()?;
-    re.captures(xml)
-        .and_then(|caps| caps.get(1).map(|m| m.as_str().to_string()))
 }
 
 fn build_pom_url(group: &str, artifact: &str, version: &str) -> String {
@@ -194,7 +170,7 @@ async fn download_jar(dep: &Dependency) -> Result<(), String> {
 
     // ✅ Skip if already exists
     if Path::new(&local_path).exists() {
-        println!("Already exists, skipping: {}", local_path);
+        println!("📦 Already exists, skipping: {}", local_path);
         return Ok(());
     }
 
@@ -215,7 +191,7 @@ async fn download_jar(dep: &Dependency) -> Result<(), String> {
 
     if !resp.status().is_success() {
         return Err(format!(
-            "Unable to download, HTTP Status Code: {}",
+            "⚠️ Unable to download, HTTP Status Code: {}",
             resp.status()
         ));
     }

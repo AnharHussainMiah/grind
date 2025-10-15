@@ -57,11 +57,16 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 ## Current Progress/Road Map
 
 - [x] ✅ Scaffold New Project
-- [x] ⏳ Install all dependencies
+- [x] ✅ Install all dependencies
   - [x] ✅ Use "newest" strategy for artifact collisions
   - [x] ✅ Generate "grind.lock" file, re-generate on add/remove or mismatch on "install"
-  - [ ] ⚠️ Correctly handle super POM via `<parent>`, `BOM` imports, and `<dependencyManagement>` resolution
+  - [x] ✅ Correctly handle super POM via `<parent>` recursive walk,
+  - [x] ✅ Handle `<dependencyManagement>` resolution and order of inheritence
+  - [x] ✅ Handle cyclic dependency checks
+  - [x] ✅ Handle BOM import
+  - [x] ✅ Handle property interpolation
   - [ ] ⚠️ Handle exclusions
+  - [ ] ⚠️ Handle version ranges and specifiers e.g `>=, <, -` etc _(this will be a fiarly massive undertaking!)_
 - [x] ✅ Compile and build Jar file
 - [x] ✅ Compile and run Project
 - [x] ✅ Run a specific task as define in the `grind.yml` manifest
@@ -95,7 +100,7 @@ Once installed, managing your Java projects is only a single command away.
  \______/
 
         - "builds, without the headache"
-                  v0.2.0
+                  v0.6.0
 
 
 Usage: grind <COMMAND>
@@ -238,10 +243,10 @@ Instead of creating a fat jar, just copy the `libs` folder, you'll end up with a
 
 Techinally `grind` could be made to support Windows _(swithing out bash for poweshell, and minor changes in classpaths)_, but I don't have the energy to make that happen! It's open source and I would massively welcome all contributions for any feature(s) that you would really like to see.
 
-## Coding Design
+## Design Philosophy
 
-I'm following the `YAGNI` and `KISS` as well as _"Deliver the simplest solution that works."_ approach to software design. I also do not like lots of nested folders, so I try to organise the codes into their own
-modules, the fewer the indirection the easier it is to reason about the code.
+I'm following the `YAGNI`, `KISS`, and the _"deliver the simplest solution that works."_ approach to software design. I also do not like lots of nested folders and endless abstractions, so I try to organise things into their own simple
+module and keep things as "flat" as possible. I believe keeping the indirection as low as possible makes it easier to reason about the code.
 
 ## Contributions
 
