@@ -35,6 +35,8 @@ fn create_gitignore_file(artifact_id: &str) {
 target/*
 build/*
 cache/*
+plugins/*
+reports/*
 "#;
     std::fs::write(format!("{}/.gitignore", artifact_id), gitignore).unwrap();
     println!("==> created .gitignore file");
@@ -83,14 +85,15 @@ fn create_src_and_namespace(namespace: &str, artifact_id: &str) {
 }
 
 fn create_java_file(namespace: &str, artifact_id: &str) {
-    let main_class = r#"
+    let main_class = r#"package <GROUP_ID>;
+
 public class <ARTIFACT_ID> {
     public static void main(String[] args) {
         System.out.println("Hello, world from grind!");
     }
 }    
 "#;
-    let main_class = main_class.replace("<ARTIFACT_ID>", artifact_id);
+    let main_class = main_class.replace("<ARTIFACT_ID>", artifact_id).replace("<GROUP_ID>", namespace);
     let packages = namespace.replace(".", "/");
     std::fs::write(
         format!(

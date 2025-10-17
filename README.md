@@ -66,19 +66,19 @@ We recommend downloading the appropriate binary for your system from the [GitHub
   - [x] ✅ Handle BOM import
   - [x] ✅ Handle property interpolation
   - [ ] ⚠️ Handle exclusions
-  - [ ] ⚠️ Handle version ranges and specifiers e.g `>=, <, -` etc _(this will be a fiarly massive undertaking!)_
+  - [ ] ⚠️ Handle version ranges and specifiers e.g `>=, <, -` etc _(this will be a fairly massive undertaking!)_
 - [x] ✅ Compile and build Jar file
 - [x] ✅ Compile and run Project
 - [x] ✅ Run a specific task as define in the `grind.yml` manifest
 - [x] ✅ List all available custom tasks
 - [x] ✅ Add a dependency
 - [x] ✅ Remove a dependency
+- [ ] ⏳ Testing: using custom test runner [TestTube](https://github.com/AnharHussainMiah/TestTube) built ironically using Grind! _(built in package integrity checks)_
 
 ## Long Term Goals
 
-- [ ] Test Runner
 - [ ] Manage Java SDK versions a bit like "Node Version Manager" or "rustup"
-- [ ] Other Repositories than Maven or Support custom/private repos?
+- [ ] Other Repositories other than Maven or Support custom/private repos?
 - [ ] Multiple Project Scaffolds
 - [ ] A Java formatter e.g a bit like "cargo fmt"
 

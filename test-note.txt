@@ -325,6 +325,4 @@ public class Cupping {
     }
 }
 
-
-
 junit-platform-launcher

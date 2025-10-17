@@ -1,6 +1,6 @@
 [package]
 name = "grind"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 
 [dependencies]
@@ -16,3 +16,6 @@ regex = "1.11.3"
 semver = "1.0.27"
 serde_path_to_error = "0.1.20"
 quick-xml = { version = "0.38.3", features = ["serialize"] }
+md5 = "0.8.0"
+walkdir = "2.5.0"
+zip = "6.0.0"

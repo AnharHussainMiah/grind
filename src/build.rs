@@ -25,7 +25,7 @@ pub fn execute_build(grind: &Grind, target: BuildTarget) {
         });
         let mut manifest = String::new();
 
-        manifest.push_str(&format!("Main-Class: {}", grind.project.artifactId));
+        manifest.push_str(&format!("Main-Class: {}.{}", grind.project.groupId, grind.project.artifactId));
 
         if !external_jars.is_empty() {
             manifest.push_str(&format!("\nClass-Path: {}", external_jars.join("\n    ")));

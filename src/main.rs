@@ -1,9 +1,14 @@
 use clap::{Parser, Subcommand};
+use std::fs::File;
+use std::io::Read;
+use std::io::Write;
 use std::path::Path;
+use std::path::PathBuf;
 
 mod build;
 mod config;
 mod install;
+mod integrity;
 mod lock;
 mod manage;
 mod mock;
@@ -11,6 +16,7 @@ mod pom;
 mod run;
 mod scaffold;
 mod tasks;
+mod tests;
 mod util;
 
 use crate::build::BuildTarget;
@@ -30,7 +36,7 @@ const LOGO: &str = r#"
  \______/                                   
 
         - "builds, without the headache"
-                    v0.6.0
+                    v0.7.0
 "#;
 
 #[derive(Parser, Debug)]
@@ -44,7 +50,7 @@ struct Cli {
 enum Commands {
     /// Scaffolds a new Java project with a grind.yml file
     New {
-        /// Name of the project to create <NameSpace>/<ProjectName> e.g com.example/HelloWorld
+        /// Name of the project to create <GroupId>/<ArtifactId> e.g com.example/HelloWorld
         name: String,
     },
     /// Download all the external libraries and dependencies as defined in the grind.yml
@@ -55,7 +61,7 @@ enum Commands {
     Run,
     /// Adds a dependency to the project's grind.yml
     Add {
-        /// List of dependencies to add (e.g., 'spring-boot postgresql')
+        /// List of dependencies to add (e.g., 'io.javalin/javalin org.posgresql/postgresql')
         deps: Vec<String>,
     },
     /// Removes a dependency from the project's grind.yml
@@ -65,6 +71,27 @@ enum Commands {
     },
     /// Run a custom task as defiend in the grind.yml, e.g grind task clean
     Task { job: String },
+    /// Create the integrity file or validate one for plugins/packages
+    Integrity {
+        #[command(subcommand)]
+        integrity: IntegritySubcommand,
+    },
+    /// Run Tests
+    Test { tests: Vec<String> },
+}
+
+#[derive(Subcommand, Debug)]
+enum IntegritySubcommand {
+    /// Generate integrity.json inside the directory
+    Generate {
+        /// Path to the directory to hash
+        dir: PathBuf,
+    },
+    /// Validate the integrity of the directory using integrity.json
+    Validate {
+        /// Path to the directory to validate
+        dir: PathBuf,
+    },
 }
 
 #[tokio::main]
@@ -79,6 +106,15 @@ async fn main() {
         Commands::Add { deps } => self::handle_add(deps).await,
         Commands::Remove { deps } => self::handle_remove(deps).await,
         Commands::Task { job } => self::handle_task(job),
+        Commands::Integrity { integrity } => match integrity {
+            IntegritySubcommand::Generate { dir } => {
+                let _ = self::handle_generate_integrity(dir);
+            }
+            IntegritySubcommand::Validate { dir } => {
+                let _ = self::handle_validate_integrity(dir);
+            }
+        },
+        Commands::Test { tests } => self::handle_tests(tests),
     }
 }
 
@@ -90,13 +126,13 @@ fn handle_new(name: &str) {
             scaffold::create(namespace, artifact_id);
         } else {
             println!(
-                "Sorry project folder '{}' already exists, exiting...",
+                "⚠️ Sorry project folder '{}' already exists, exiting...",
                 artifact_id
             );
         }
     } else {
         println!(
-            "Sorry '{}' is not a valid project name, requires a namespace and artifactId, e.g com.example/HelloWorld",
+            "⚠️ Sorry '{}' is not a valid project name, requires a namespace and artifactId, e.g com.example/HelloWorld",
             name
         );
     }
@@ -155,6 +191,42 @@ fn parse_project_name(input: &str) -> Result<(&str, &str), &'static str> {
 
     match (parts.next(), parts.next(), parts.next()) {
         (Some(first), Some(second), None) => Ok((first, second)),
-        _ => Err("Input must contain exactly one '/' and two non-empty parts"),
+        _ => Err("⚠️ Input must contain exactly one '/' and two non-empty parts"),
     }
+}
+
+fn handle_generate_integrity(dir: PathBuf) -> Result<(), String> {
+    let json = integrity::generate_integrity_data(&dir).map_err(|e| e.to_string())?;
+    let integrity_file = dir.join("integrity.json");
+    let mut file = File::create(&integrity_file).map_err(|e| e.to_string())?;
+    file.write_all(json.as_bytes()).map_err(|e| e.to_string())?;
+    println!("✅ Integrity data written to {}", integrity_file.display());
+    Ok(())
+}
+
+fn handle_validate_integrity(dir: PathBuf) -> Result<(), String> {
+    let integrity_file = dir.join("integrity.json");
+    if !integrity_file.exists() {
+        eprintln!("❌ integrity.json not found in {}", dir.display());
+        return Err("missng integrity.json".to_string());
+    }
+
+    let mut json_data = String::new();
+    File::open(&integrity_file)
+        .map_err(|e| e.to_string())?
+        .read_to_string(&mut json_data)
+        .map_err(|e| e.to_string())?;
+
+    let valid = integrity::verify_integrity_data(&dir, &json_data).map_err(|e| e.to_string())?;
+    if valid {
+        println!("✅ Integrity check passed.");
+    } else {
+        println!("❌ Integrity check failed.");
+        return Err("integrity check failed".to_string());
+    }
+    Ok(())
+}
+
+fn handle_tests(tests: Vec<String>) {
+    tests::run_tests(tests);
 }
