@@ -10,11 +10,11 @@
 
 Compared to modern build tools such as **cargo** and **npm** Java build tools feel outdated and overly complex, and they seem to be relegated to the background only to be used by the IDE or CI/CD tooling.
 
-**grind** is a hassle free, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools? Then maybe it's time to try a new tool!
+**grind** is a hassle free, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools? Then maybe it's time to try a new alternative!
 
 **grind** simplifies your project workflow by introducing the **`grind.yml`** manifest, providing a single consistent source of truth for all your projects. Write less XML or build configurations, manage builds more efficiently, and get back to writing code!
 
-**TL;DR: grind the npm of Java**
+**TL;DR: grind the cargo of Java**
 
 ## ✨ Main Features
 
@@ -54,7 +54,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
     sudo mv grind /usr/local/bin/
     ```
 
-## Current Progress/Road Map
+## Current Progress/Roadmap
 
 - [x] ✅ Scaffold New Project
 - [x] ✅ Install all dependencies
@@ -73,7 +73,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 - [x] ✅ List all available custom tasks
 - [x] ✅ Add a dependency
 - [x] ✅ Remove a dependency
-- [ ] ⏳ Testing: using custom test runner [TestTube](https://github.com/AnharHussainMiah/TestTube) built ironically using Grind! _(built in package integrity checks)_
+- [ ] ⏳ Testing: using custom test runner [TestTube](https://github.com/AnharHussainMiah/TestTube) built ironically using Grind! _(with built in package integrity checks)_
 
 ## Long Term Goals
 
@@ -241,7 +241,7 @@ Instead of creating a fat jar, just copy the `libs` folder, you'll end up with a
 
 ## No Windows Support.
 
-Techinally `grind` could be made to support Windows _(swithing out bash for poweshell, and minor changes in classpaths)_, but I don't have the energy to make that happen! It's open source and I would massively welcome all contributions for any feature(s) that you would really like to see.
+Techinally `grind` could be made to support Windows _(switching out bash for poweshell, and minor changes in classpaths)_, but I don't have the energy to make that happen! It's open source and I would massively welcome all contributions for any feature(s) that you would really like to see.
 
 ## Design Philosophy
 
