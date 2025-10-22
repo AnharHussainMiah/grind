@@ -37,6 +37,27 @@ pub fn shell(cmd: &str) -> String {
     result.trim().to_string()
 }
 
+pub fn shell_result(cmd: &str) -> Result<String, String> {
+    let output = Command::new("bash")
+        .arg("-c")
+        .arg(cmd)
+        .output()
+        .expect("failed to execute command");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    if !stdout.trim().is_empty() {
+        return Ok(stdout.to_string());
+    }
+
+    if !stderr.trim().is_empty() {
+        return Err(stderr.to_string());
+    }
+
+    Err("Error: Unable both stdout and stderror failed..".to_string())
+}
+
 pub fn ls_with_ext(dir: &str, extension: &str) -> std::io::Result<Vec<String>> {
     let mut files = Vec::new();
 

@@ -114,7 +114,7 @@ mod tests {
 
         let json_data =
             generate_integrity_data(src_path).expect("Failed to generate integrity data");
-            
+
         let result =
             verify_integrity_data(src_path, &json_data).expect("Failed to verify integrity data");
 

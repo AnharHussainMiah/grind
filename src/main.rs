@@ -35,7 +35,7 @@ const LOGO: &str = r#"
 |  $$$$$$/                                  
  \______/                                   
 
-        - "builds, without the headache"
+        - "Java builds, without the headache"
                     v0.7.0
 "#;
 
@@ -114,7 +114,7 @@ async fn main() {
                 let _ = self::handle_validate_integrity(dir);
             }
         },
-        Commands::Test { tests } => self::handle_tests(tests),
+        Commands::Test { tests } => self::handle_tests(tests).await,
     }
 }
 
@@ -204,7 +204,7 @@ fn handle_generate_integrity(dir: PathBuf) -> Result<(), String> {
     Ok(())
 }
 
-fn handle_validate_integrity(dir: PathBuf) -> Result<(), String> {
+pub fn handle_validate_integrity(dir: PathBuf) -> Result<(), String> {
     let integrity_file = dir.join("integrity.json");
     if !integrity_file.exists() {
         eprintln!("❌ integrity.json not found in {}", dir.display());
@@ -227,6 +227,10 @@ fn handle_validate_integrity(dir: PathBuf) -> Result<(), String> {
     Ok(())
 }
 
-fn handle_tests(tests: Vec<String>) {
-    tests::run_tests(tests);
+async fn handle_tests(tests: Vec<String>) {
+    if let Some(grind) = util::parse_grind_file() {
+        tests::run_tests(grind, tests).await;
+    } else {
+        println!("⚠️ Error: no grind.yml or invalid grind.yml")
+    }
 }

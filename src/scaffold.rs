@@ -93,7 +93,9 @@ public class <ARTIFACT_ID> {
     }
 }    
 "#;
-    let main_class = main_class.replace("<ARTIFACT_ID>", artifact_id).replace("<GROUP_ID>", namespace);
+    let main_class = main_class
+        .replace("<ARTIFACT_ID>", artifact_id)
+        .replace("<GROUP_ID>", namespace);
     let packages = namespace.replace(".", "/");
     std::fs::write(
         format!(

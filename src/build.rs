@@ -7,6 +7,7 @@ use std::fs;
 pub enum BuildTarget {
     BuildOnly,
     IncludeJar,
+    IncludeTest,
 }
 
 pub fn execute_build(grind: &Grind, target: BuildTarget) {
@@ -25,7 +26,10 @@ pub fn execute_build(grind: &Grind, target: BuildTarget) {
         });
         let mut manifest = String::new();
 
-        manifest.push_str(&format!("Main-Class: {}.{}", grind.project.groupId, grind.project.artifactId));
+        manifest.push_str(&format!(
+            "Main-Class: {}.{}",
+            grind.project.groupId, grind.project.artifactId
+        ));
 
         if !external_jars.is_empty() {
             manifest.push_str(&format!("\nClass-Path: {}", external_jars.join("\n    ")));
@@ -43,10 +47,24 @@ pub fn execute_build(grind: &Grind, target: BuildTarget) {
             if !out.is_empty() {
                 println!("{}", out);
             }
-            // clean up extra folders
-            shell(&format!("rm -rf {}/", grind.project.artifactId));
         } else {
             println!("⚠️ Error: unbale to generate the manifest!");
         }
     }
+
+    if target == BuildTarget::IncludeTest {
+        println!(
+            "==> 🔨 compiling tests for [{}]...",
+            grind.project.artifactId
+        );
+        let out = shell(
+            "javac -d target/test -cp \"target:libs/*\" $(find src/test/java -name \"*.java\")",
+        );
+        if !out.is_empty() {
+            println!("{}", out);
+        }
+    }
+
+    // clean up extra folders
+    shell(&format!("rm -rf {}/", grind.project.artifactId));
 }
