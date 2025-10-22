@@ -73,7 +73,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 - [x] ✅ List all available custom tasks
 - [x] ✅ Add a dependency
 - [x] ✅ Remove a dependency
-- [ ] ⏳ Testing: using custom test runner [TestTube](https://github.com/AnharHussainMiah/TestTube) built ironically using Grind! _(with built in package integrity checks)_
+- [x] ✅ Testing: using custom test runner [TestTube](https://github.com/AnharHussainMiah/TestTube) built ironically using Grind! _(with built in package integrity checks)_
 
 ## Long Term Goals
 
@@ -99,21 +99,23 @@ Once installed, managing your Java projects is only a single command away.
 |  $$$$$$/
  \______/
 
-        - "builds, without the headache"
-                  v0.6.0
+        - "Java builds, without the headache"
+                    v0.7.0
 
 
 Usage: grind <COMMAND>
 
 Commands:
-  new      Scaffolds a new Java project with a grind.yml file
-  install  Download all the external libraries and dependencies as defined in the grind.yml
-  build    Compile the project and builds a jar file
-  run      Compile and run the project
-  add      Adds a dependency to the project's grind.yml
-  remove   Removes a dependency from the project's grind.yml
-  task     Run a custom task as defiend in the grind.yml, e.g grind task clean
-  help     Print this message or the help of the given subcommand(s)
+  new        Scaffolds a new Java project with a grind.yml file
+  install    Download all the external libraries and dependencies as defined in the grind.yml
+  build      Compile the project and builds a jar file
+  run        Compile and run the project
+  add        Adds a dependency to the project's grind.yml
+  remove     Removes a dependency from the project's grind.yml
+  task       Run a custom task as defiend in the grind.yml, e.g grind task clean
+  integrity  Create the integrity file or validate one for plugins/packages
+  test       Run Tests
+  help       Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help
@@ -224,6 +226,59 @@ then to run your custom task just do:
 
 ```shell
 grind task copy-jar
+```
+
+### 8. Running Tests
+
+Assuming you have written your test classes _(and have included the Junit dependency)_, to run a specific test or tests simply invoke :
+
+```shell
+# run a single test
+grind test com.example.Foo
+# run multiple tests
+grind test com.example.FooTest com.example.BarTest com.example.BazTest
+# run all tests
+grind test
+```
+
+This will automatically download the test plugin and install it, unpack it and verify the bundle, then compile all the test classes and then run the tests, and finally write the XML reports to disk under `reports`
+
+```shell
+🌎 Downloading TestTube plugin...
+🗜️ Extracting TestTube plugin...
+✅ Extraction complete!
+🔍 Verifying files in directory: plugins/TestTube
+[OK] 19e52f8ac17a67f625a337e9e38622a6 | libs/org.junit.platform_junit-platform-launcher_1.13.0-M3.jar
+[OK] 8c7de3f82037fa4a2e8be2a2f13092af | libs/org.apiguardian_apiguardian-api_1.1.2.jar
+[OK] 005914a884db365bfefd3b36086703d3 | libs/org.junit.platform_junit-platform-commons_1.13.0-M3.jar
+[OK] 45c09ab04dd09ef6afbda47eb0ae31a5 | libs/org.junit.platform_junit-platform-reporting_1.13.0-M3.jar
+[OK] 03c404f727531f3fd3b4c73997899327 | libs/org.opentest4j_opentest4j_1.3.0.jar
+[OK] 58ab9d57ded624201ae0319ffda5995c | libs/org.junit.jupiter_junit-jupiter-api_5.13.0-M3.jar
+[OK] c502ae6080594b6437ef39c4a47038fc | libs/org.junit.jupiter_junit-jupiter-engine_5.13.0-M3.jar
+[OK] ed04fe87e33c5accbf0a01c1aa9bdafa | libs/org.opentest4j.reporting_open-test-reporting-tooling-spi_0.2.3.jar
+[OK] f70eba72906c90378b0cdc5b27831b8a | libs/org.junit.platform_junit-platform-engine_1.13.0-M3.jar
+[OK] ad8fe13cd287bdfe00aa52576b33d5f1 | TestTube.jar
+
+📄 Summary:
+  Total files checked : 10
+  Missing files       : 0
+  Hash mismatches     : 0
+✅ All files passed integrity check.
+✅ Integrity check passed.
+==> 🔨 compiling project [HelloWorld]...
+==> 🔨 compiling tests for [HelloWorld]...
+Adding Dynamic Class -> com.example.HelloWorldTest
+========== Test Summary ==========
+Total tests:      1
+✅ Passed:        1
+❌ Failed:        0
+⏩ Skipped:       0
+🚫 Aborted:       0
+==================================
+
+✅ All tests passed.
+
+📄 XML reports written to: /home/anhar/Documents/Projects/grind/HelloWorld/reports
 ```
 
 ### Dependencies
