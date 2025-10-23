@@ -32,6 +32,25 @@ pub async fn execute_install(grind: Grind) {
     let resolved = self::fix_collisions(resolved);
     for dep in &resolved {
         if let Err(e) = self::download_jar(dep).await {
+            /*
+                we need to think about the "global" state, while we have fixed the "local"
+                collisions, we may still be introducing an older version from a different dependency
+                path.
+
+                A failure could happen because of:
+                
+                    * (A) Download Issue (network) tempory blip
+                    * (B) It's not a real JAR, e.g ${version} or [1.1.0,) etc
+                    * (C) There is already a newer version
+
+                if it's B or C then we need to remove the dep from the resolved list as we do NOT
+                want to lock this into the lock file.
+
+                When we have C, we need to also make sure the older version is physically deleted.
+
+                Only A should go into the lock file, as in we should have that dep, even though it
+                failed due to network issues.
+            */
             println!("⚠️ Failed to download [{:?}]: {:?}", dep, e);
         }
     }
