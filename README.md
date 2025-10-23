@@ -1,4 +1,4 @@
-# ☕ Java Grind: Builds, without the headache
+# ☕ Grind: Java Builds, without the headache
 
 ![Grind](logo.png)
 
