@@ -1,8 +1,7 @@
 use crate::Grind;
 use crate::config::Dependency;
 use crate::install;
-use reqwest::Client;
-use serde::Deserialize;
+use crate::metadata;
 use std::fs;
 
 pub async fn execute_add(grind: Grind, deps: Vec<String>) {
@@ -112,77 +111,90 @@ fn delete_jar(dep: &Dependency) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-#[derive(Debug, Deserialize)]
-struct SolrResponse {
-    response: ResponseData,
-}
+// #[derive(Debug, Deserialize)]
+// struct SolrResponse {
+//     response: ResponseData,
+// }
 
-#[allow(non_snake_case)]
-#[derive(Debug, Deserialize)]
-struct ResponseData {
-    numFound: u32,
-    docs: Vec<Doc>,
-}
+// #[allow(non_snake_case)]
+// #[derive(Debug, Deserialize)]
+// struct ResponseData {
+//     numFound: u32,
+//     docs: Vec<Doc>,
+// }
 
-#[derive(Debug, Deserialize, Clone)]
-struct Doc {
-    #[serde(rename = "g")]
-    group_id: String,
-    #[serde(rename = "a")]
-    artifact_id: String,
-    #[serde(rename = "v")]
-    version: String,
-}
+// #[derive(Debug, Deserialize, Clone)]
+// struct Doc {
+//     #[serde(rename = "g")]
+//     group_id: String,
+//     #[serde(rename = "a")]
+//     artifact_id: String,
+//     #[serde(rename = "v")]
+//     version: String,
+// }
 
-async fn search_deps(group_id: &str, artifact: &str, version: &str) -> Option<Dependency> {
-    let mut query = format!("g:{} AND a:{}", group_id, artifact);
+async fn search_deps(group_id: &str, artifact: &str, _version: &str) -> Option<Dependency> {
+    //let mut query = format!("g:{} AND a:{}", group_id, artifact);
 
-    if !version.is_empty() {
-        query = format!("{} AND v:\"{}\"", query, version);
+    if let Ok((release, _versions)) = metadata::fetch_maven_metadata(group_id, artifact).await {
+        if let Some(v) = release {
+            println!("✅ Match Found: {}/{} v{}", &group_id, &artifact, &v);
+
+            return Some(Dependency {
+                groupId: group_id.to_string(),
+                artifactId: artifact.to_string(),
+                version: v,
+                scope: Some("runtime".to_string()),
+            });
+        }
     }
+
+    // if !version.is_empty() {
+    //     query = format!("{} AND v:\"{}\"", query, version);
+    // }
 
     // println!("DEBUG: {}", query);
 
-    let url = format!(
-        "https://search.maven.org/solrsearch/select?q={}&rows=1&core=gav&wt=json&sort=version+desc",
-        urlencoding::encode(&query)
-    );
+    // let url = format!(
+    //     "https://search.maven.org/solrsearch/select?q={}&rows=1&core=gav&wt=json&sort=version+desc",
+    //     urlencoding::encode(&query)
+    // );
 
-    let client = Client::builder().user_agent("curl/8.5.0").build().unwrap();
+    // let client = Client::builder().user_agent("curl/8.5.0").build().unwrap();
 
-    match client.get(url).send().await {
-        Ok(response) => {
-            let body = response.text().await;
+    // match client.get(url).send().await {
+    //     Ok(response) => {
+    //         let body = response.text().await;
 
-            let j = match body {
-                Ok(b) => b,
-                Err(e) => {
-                    println!("⚠️ ERROR: Unable to extract Reponse Body");
-                    e.to_string()
-                }
-            };
+    //         let j = match body {
+    //             Ok(b) => b,
+    //             Err(e) => {
+    //                 println!("⚠️ ERROR: Unable to extract Reponse Body");
+    //                 e.to_string()
+    //             }
+    //         };
 
-            let parsed: SolrResponse = serde_json::from_str(&j).unwrap();
+    //         let parsed: SolrResponse = serde_json::from_str(&j).unwrap();
 
-            if parsed.response.numFound > 1 {
-                println!(
-                    "✅ Match Found: {}/{} v{}",
-                    &parsed.response.docs[0].group_id,
-                    &parsed.response.docs[0].artifact_id,
-                    &parsed.response.docs[0].version
-                );
-                let doc = parsed.response.docs[0].clone();
+    //         if parsed.response.numFound > 1 {
+    //             println!(
+    //                 "✅ Match Found: {}/{} v{}",
+    //                 &parsed.response.docs[0].group_id,
+    //                 &parsed.response.docs[0].artifact_id,
+    //                 &parsed.response.docs[0].version
+    //             );
+    //             let doc = parsed.response.docs[0].clone();
 
-                return Some(Dependency {
-                    groupId: doc.group_id,
-                    artifactId: doc.artifact_id,
-                    version: doc.version,
-                    scope: Some("runtime".to_string()),
-                });
-            }
-        }
-        Err(e) => println!("⚠️ ERROR: {}", e),
-    };
+    //             return Some(Dependency {
+    //                 groupId: doc.group_id,
+    //                 artifactId: doc.artifact_id,
+    //                 version: doc.version,
+    //                 scope: Some("runtime".to_string()),
+    //             });
+    //         }
+    //     }
+    //     Err(e) => println!("⚠️ ERROR: {}", e),
+    // };
 
     None
 }

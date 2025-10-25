@@ -4,7 +4,6 @@ use crate::lock;
 use crate::pom;
 use crate::pom::PomId;
 use crate::util;
-use semver::Version;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::HashSet;

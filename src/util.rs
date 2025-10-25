@@ -215,6 +215,7 @@ mod tests {
             ("1.0.0", "1.0", Ordering::Equal),
             ("1.0-SNAPSHOT", "1.0", Ordering::Less),
             ("2.0", "1.9.9", Ordering::Greater),
+            ("3.5.3", "4.0.0-M3", Ordering::Less),
         ];
 
         for (a, b, expected) in cases {

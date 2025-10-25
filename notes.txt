@@ -56,3 +56,9 @@ Parent Resolution:
   * child values override parent values of the same item
   * finally apply property find/replace
   * finally use this "collated" <dependencyManagement> Map to fill out any depedency that doesn't have a version
+
+
+
+USE Maven Meta Data in order to get latest version NOT solr!
+
+https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-autoconfigure/maven-metadata.xml

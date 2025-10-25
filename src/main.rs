@@ -11,6 +11,7 @@ mod install;
 mod integrity;
 mod lock;
 mod manage;
+mod metadata;
 mod mock;
 mod pom;
 mod run;
