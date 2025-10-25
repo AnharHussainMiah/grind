@@ -3,7 +3,9 @@ use crate::config::Dependency;
 use crate::lock;
 use crate::pom;
 use crate::pom::PomId;
+use crate::util;
 use semver::Version;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -28,8 +30,16 @@ pub async fn execute_install(grind: Grind) {
         return;
     }
     println!("⚙️ need to resolve all dependencies...");
-    let resolved = self::resolve_all_deps(grind.project.dependencies.clone()).await;
-    let resolved = self::fix_collisions(resolved);
+    let mut resolved = self::resolve_all_deps(grind.project.dependencies.clone()).await;
+
+    if let Ok(locked) = lock::get_lock_file() {
+        // we need to merge with existing downloaded deps from before
+        resolved.extend(locked.lockedDeps);
+    };
+
+    resolved = self::filter_invalid(resolved);
+
+    resolved = self::fix_collisions(resolved);
     for dep in &resolved {
         if let Err(e) = self::download_jar(dep).await {
             /*
@@ -38,7 +48,7 @@ pub async fn execute_install(grind: Grind) {
                 path.
 
                 A failure could happen because of:
-                
+
                     * (A) Download Issue (network) tempory blip
                     * (B) It's not a real JAR, e.g ${version} or [1.1.0,) etc
                     * (C) There is already a newer version
@@ -224,6 +234,21 @@ async fn download_jar(dep: &Dependency) -> Result<(), String> {
     Ok(())
 }
 
+fn filter_invalid(deps: HashSet<Dependency>) -> HashSet<Dependency> {
+    deps.into_iter()
+        .filter(|dep| {
+            !dep.version.contains("{")
+                && !dep.version.contains("}")
+                && !dep.version.contains(")")
+                && !dep.version.contains("(")
+                && !dep.version.contains("$")
+                && !dep.version.contains("[")
+                && !dep.version.contains("]")
+                && !dep.version.contains(",")
+        })
+        .collect()
+}
+
 fn fix_collisions(deps: HashSet<Dependency>) -> HashSet<Dependency> {
     /* ---------------------------------------------------------------------------------------------
     modern build tools and including the latest versions of maven use the "newest" version wins
@@ -254,10 +279,11 @@ fn fix_collisions(deps: HashSet<Dependency>) -> HashSet<Dependency> {
 
 fn is_version_newer(source: &str, target: &str) -> bool {
     // source < targer
-    if let (Ok(s), Ok(t)) = (Version::parse(source), Version::parse(target)) {
-        return s < t;
-    }
-    false
+    return util::compare_maven_versions(source, target) == Ordering::Less;
+    // if let (Ok(s), Ok(t)) = (Version::parse(source), Version::parse(target)) {
+
+    // }
+    // true
 }
 
 #[cfg(test)]
@@ -271,16 +297,16 @@ mod tests {
         let mut deps = HashSet::new();
 
         deps.insert(Dependency {
-            groupId: "com.example".to_string(),
-            artifactId: "lib1".to_string(),
-            version: String::from("1.0.0"),
+            groupId: "xml-resolver".to_string(),
+            artifactId: "xml-resolver".to_string(),
+            version: String::from("1.1"),
             scope: None,
         });
 
         deps.insert(Dependency {
-            groupId: "com.example".to_string(),
-            artifactId: "lib1".to_string(),
-            version: String::from("2.0.0"), // Should be kept
+            groupId: "xml-resolver".to_string(),
+            artifactId: "xml-resolver".to_string(),
+            version: String::from("1.2"), // Should be kept
             scope: None,
         });
 
@@ -313,9 +339,9 @@ mod tests {
         // Check that correct versions are picked
         let expected = vec![
             Dependency {
-                groupId: "com.example".to_string(),
-                artifactId: "lib1".to_string(),
-                version: String::from("2.0.0"),
+                groupId: "xml-resolver".to_string(),
+                artifactId: "xml-resolver".to_string(),
+                version: String::from("1.2"),
                 scope: None,
             },
             Dependency {

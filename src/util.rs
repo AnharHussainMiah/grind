@@ -115,3 +115,115 @@ pub fn unzip_file(zip_path: &Path, destination: &Path) -> zip::result::ZipResult
 
     Ok(())
 }
+
+use std::cmp::Ordering;
+
+/// Known Maven qualifier ranking
+fn qualifier_rank(q: &str) -> i32 {
+    match q.to_ascii_lowercase().as_str() {
+        "snapshot" => 1,
+        "alpha" | "a" => 2,
+        "beta" | "b" => 3,
+        "milestone" | "m" => 4,
+        "rc" | "cr" => 5,
+        "" | "final" | "ga" | "release" => 6,
+        "sp" => 7,
+        _ => 8, // unknown qualifiers
+    }
+}
+
+/// Split a token into numeric part, qualifier letters, qualifier number
+fn split_token(token: &str) -> (u64, String, u64) {
+    let mut digits = String::new();
+    let mut letters = String::new();
+    let mut qualifier_number = String::new();
+    let mut in_letters = false;
+
+    for c in token.chars() {
+        if c.is_ascii_digit() && !in_letters {
+            digits.push(c);
+        } else if c.is_ascii_alphabetic() {
+            in_letters = true;
+            letters.push(c);
+        } else if c.is_ascii_digit() && in_letters {
+            qualifier_number.push(c);
+        }
+    }
+
+    let number = digits.parse::<u64>().unwrap_or(0);
+    let qnum = qualifier_number.parse::<u64>().unwrap_or(0);
+
+    (number, letters, qnum)
+}
+
+/// Extract tokens from version string
+fn extract_tokens(v: &str) -> Vec<(u64, String, u64)> {
+    v.split(|c| c == '.' || c == '-' || c == '_')
+        .map(split_token)
+        .collect()
+}
+
+/// Compare two Maven-style versions with proper qualifiers
+pub fn compare_maven_versions(v1: &str, v2: &str) -> Ordering {
+    let tokens1 = extract_tokens(v1);
+    let tokens2 = extract_tokens(v2);
+
+    let max_len = tokens1.len().max(tokens2.len());
+
+    for i in 0..max_len {
+        let (n1, q1, qn1) = tokens1.get(i).cloned().unwrap_or((0, "".into(), 0));
+        let (n2, q2, qn2) = tokens2.get(i).cloned().unwrap_or((0, "".into(), 0));
+
+        // Compare main numeric
+        if n1 != n2 {
+            return n1.cmp(&n2);
+        }
+
+        // Compare qualifier rank
+        let r1 = qualifier_rank(&q1);
+        let r2 = qualifier_rank(&q2);
+        if r1 != r2 {
+            return r1.cmp(&r2);
+        }
+
+        // Compare qualifier numeric
+        if qn1 != qn2 {
+            return qn1.cmp(&qn2);
+        }
+
+        // Fallback: lex comparison for unknown qualifiers
+        if q1 != q2 {
+            return q1.cmp(&q2);
+        }
+    }
+
+    Ordering::Equal
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mixed_versions() {
+        let cases = vec![
+            ("9.4.6.v20170531", "9.4.6.v20170530", Ordering::Greater),
+            ("9.4.6.v20170531", "9.4.6", Ordering::Greater),
+            ("9.4.6.v20170531", "9.4.6.v20170531", Ordering::Equal),
+            ("1.0-RC1", "1.0-RC2", Ordering::Less),
+            ("1.0-RC1", "1.0", Ordering::Less),
+            ("1.0.0", "1.0", Ordering::Equal),
+            ("1.0-SNAPSHOT", "1.0", Ordering::Less),
+            ("2.0", "1.9.9", Ordering::Greater),
+        ];
+
+        for (a, b, expected) in cases {
+            let result = compare_maven_versions(a, b);
+            assert_eq!(
+                result, expected,
+                "compare_maven_versions('{}', '{}') returned {:?}, expected {:?}",
+                a, b, result, expected
+            );
+        }
+    }
+}
