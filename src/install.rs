@@ -120,7 +120,7 @@ async fn fetch_deps(dep: &Dependency) -> Vec<Dependency> {
             );
 
             if let Some(v) = &rdep.scope
-                && (v.contains("compile") || v.contains("runtime"))
+                && v.contains("compile")
             {
                 deps.push(Dependency {
                     groupId: rdep.group_id,

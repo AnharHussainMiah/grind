@@ -62,3 +62,28 @@ Parent Resolution:
 USE Maven Meta Data in order to get latest version NOT solr!
 
 https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-autoconfigure/maven-metadata.xml
+
+
+```yaml
+profiles:
+  dev:
+    flags:
+      - debug
+      - hot_reload
+    envs:
+      RUST_LOG: "debug"
+      DATABASE_URL: "postgres://localhost/dev_db"
+  stage:
+    flags:
+      - optimize
+    envs:
+      RUST_LOG: "info"
+      DATABASE_URL: "postgres://staging.server/stage_db"
+  prod:
+    flags:
+      - optimize
+      - telemetry
+    envs:
+      RUST_LOG: "warn"
+      DATABASE_URL: "postgres://prod.server/prod_db"
+```

@@ -2,8 +2,9 @@ use crate::Grind;
 use std::fs;
 use std::fs::File;
 use std::io;
+use std::io::{BufRead, BufReader};
 use std::path::Path;
-use std::process::Command;
+use std::process::{Command, Stdio};
 use zip::ZipArchive;
 
 pub fn parse_grind_file() -> Option<Grind> {
@@ -56,6 +57,39 @@ pub fn shell_result(cmd: &str) -> Result<String, String> {
     }
 
     Err("Error: Unable both stdout and stderror failed..".to_string())
+}
+
+pub fn shell_stream(cmd: &str) -> std::io::Result<()> {
+    let mut child = Command::new("bash")
+        .arg("-c")
+        .arg(cmd)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?; // don't block
+
+    let stdout = child.stdout.take().expect("Failed to capture stdout");
+    let stderr = child.stderr.take().expect("Failed to capture stderr");
+
+    let stdout_reader = BufReader::new(stdout);
+    let stderr_reader = BufReader::new(stderr);
+
+    // Handle stderr in a background thread
+    std::thread::spawn(move || {
+        for line in stderr_reader.lines().flatten() {
+            eprintln!("[stderr] {}", line);
+        }
+    });
+
+    // Handle stdout on the main thread
+    for line in stdout_reader.lines().flatten() {
+        println!("{}", line);
+    }
+
+    // Wait for the process to finish
+    let status = child.wait()?;
+    println!("Process exited with: {}", status);
+
+    Ok(())
 }
 
 pub fn ls_with_ext(dir: &str, extension: &str) -> std::io::Result<Vec<String>> {

@@ -74,7 +74,18 @@ pub async fn get_effective_dependencies(
                         version: substitute_properties(v, &context.properties),
                         scope: dep.scope.clone().or(Some("compile".to_string())),
                     };
-                    effective_deps.push(final_dep);
+
+                    // skip if "optional" is set to "true"
+                    let mut is_optional = false;
+                    if let Some(optional) = dep.optional {
+                        if optional.contains("true") {
+                            is_optional = true;
+                        }
+                    }
+
+                    if !is_optional {
+                        effective_deps.push(final_dep);
+                    }
                 }
                 // Dependencies without a concrete version are ignored.
             }
@@ -345,4 +356,6 @@ struct Dependency {
     r#type: Option<String>,
     #[serde(default)]
     scope: Option<String>,
+    #[serde(default)]
+    optional: Option<String>,
 }

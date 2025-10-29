@@ -37,7 +37,7 @@ const LOGO: &str = r#"
  \______/                                   
 
         - "Java builds, without the headache"
-                    v0.7.2
+                    v0.7.3
 "#;
 
 #[derive(Parser, Debug)]
@@ -57,9 +57,15 @@ enum Commands {
     /// Download all the external libraries and dependencies as defined in the grind.yml
     Install,
     /// Compile the project and builds a jar file.
-    Build,
+    Build {
+        /// the defined profile to build with, these include compiler flags, and environment variables
+        profile: Option<String>,
+    },
     /// Compile and run the project
-    Run,
+    Run {
+        /// the defined profile to run with, these include compiler flags, and environment variables
+        profile: Option<String>,
+    },
     /// Adds a dependency to the project's grind.yml
     Add {
         /// List of dependencies to add (e.g., 'io.javalin/javalin org.posgresql/postgresql')
@@ -101,9 +107,9 @@ async fn main() {
 
     match cli.command {
         Commands::New { name } => self::handle_new(&name),
-        Commands::Build => self::handle_build(),
+        Commands::Build { profile } => self::handle_build(profile),
         Commands::Install => self::handle_install().await,
-        Commands::Run => self::handle_run(),
+        Commands::Run { profile } => self::handle_run(profile),
         Commands::Add { deps } => self::handle_add(deps).await,
         Commands::Remove { deps } => self::handle_remove(deps).await,
         Commands::Task { job } => self::handle_task(job),
@@ -139,9 +145,15 @@ fn handle_new(name: &str) {
     }
 }
 
-fn handle_build() {
+fn handle_build(profile: Option<String>) {
     if let Some(grind) = util::parse_grind_file() {
-        build::execute_build(&grind, BuildTarget::IncludeJar);
+        let mut flags = String::new();
+
+        if let Some(profile) = profile {
+            flags = self::get_flags(&grind, profile);
+        }
+
+        build::execute_build(&grind, BuildTarget::IncludeJar, flags);
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
     }
@@ -155,9 +167,9 @@ async fn handle_install() {
     }
 }
 
-fn handle_run() {
+fn handle_run(profile: Option<String>) {
     if let Some(grind) = util::parse_grind_file() {
-        run::execute_run(grind);
+        run::execute_run(grind, profile);
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
     }
@@ -234,4 +246,34 @@ async fn handle_tests(tests: Vec<String>) {
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
     }
+}
+
+pub fn get_flags(grind: &Grind, profile: String) -> String {
+    let mut flags = String::new();
+
+    if let Some(profiles) = &grind.project.profiles {
+        if let Some(matched) = profiles.get(&profile) {
+            if let Some(matched_flags) = &matched.flags {
+                flags = matched_flags.join(" ")
+            }
+        }
+    }
+    flags
+}
+
+pub fn get_envs(grind: &Grind, profile: String) -> String {
+    let mut envs = String::new();
+
+    if let Some(profiles) = &grind.project.profiles {
+        if let Some(matched) = profiles.get(&profile) {
+            if let Some(matched_envs) = &matched.envs {
+                envs = matched_envs
+                    .iter()
+                    .map(|(key, value)| format!("{}={}", key, value))
+                    .collect::<Vec<_>>()
+                    .join(" ");
+            }
+        }
+    }
+    envs
 }

@@ -10,10 +10,17 @@ pub enum BuildTarget {
     IncludeTest,
 }
 
-pub fn execute_build(grind: &Grind, target: BuildTarget) {
+pub fn execute_build(grind: &Grind, target: BuildTarget, build_flags: String) {
     println!("==> 🔨 compiling project [{}]...", grind.project.artifactId);
     std::fs::create_dir_all(format!("{}/target", grind.project.artifactId)).unwrap();
-    let out = shell("javac -d target -cp \"libs/*\" $(find src/main/java -name \"*.java\")");
+
+    shell("rm -rf target/");
+    shell("mkdir target");
+
+    let out = shell(&format!(
+        "javac {} -d target -cp \"libs/*\" $(find src/main/java -name \"*.java\")",
+        &build_flags
+    ));
     if !out.is_empty() {
         println!("{}", out);
     }
@@ -39,6 +46,9 @@ pub fn execute_build(grind: &Grind, target: BuildTarget) {
         if fs::write("src/main/resources/manifest.mf", manifest).is_ok() {
             println!("{}", shell("rm -rf build/"));
             println!("{}", shell("mkdir -p build/"));
+
+            shell("cp -r src/main/resources/. target/");
+
             let cmd = format!(
                 "jar cfm build/{}.jar src/main/resources/manifest.mf -C target .",
                 grind.project.artifactId
@@ -64,6 +74,8 @@ pub fn execute_build(grind: &Grind, target: BuildTarget) {
             println!("{}", out);
         }
     }
+
+    shell("cp -r src/main/resources/. target/");
 
     // clean up extra folders
     shell(&format!("rm -rf {}/", grind.project.artifactId));

@@ -19,6 +19,16 @@ pub struct Project {
     pub description: String,
     pub dependencies: Vec<Dependency>,
     pub tasks: HashMap<String, String>,
+    #[serde(default)]
+    pub profiles: Option<HashMap<String, Profile>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Profile {
+    #[serde(default)]
+    pub flags: Option<Vec<String>>,
+    #[serde(default)]
+    pub envs: Option<HashMap<String, String>>,
 }
 
 #[allow(non_snake_case)]

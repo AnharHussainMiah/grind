@@ -16,7 +16,8 @@ pub async fn run_tests(grind: Grind, tests: Vec<String>) {
     }
 
     if self::check_plugin_integrity() {
-        build::execute_build(&grind, BuildTarget::IncludeTest);
+        // TODO: at the moment we're NOT passing any compiler flags
+        build::execute_build(&grind, BuildTarget::IncludeTest, String::new());
         let args = tests.join(" ");
         let cmd = format!(
             "java -cp \"target:target/test:libs/*:plugins/TestTube/libs/*:plugins/TestTube/TestTube.jar\" org.grind.TestTube {}",

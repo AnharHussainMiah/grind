@@ -281,6 +281,42 @@ Total tests:      1
 📄 XML reports written to: /home/anhar/Documents/Projects/grind/HelloWorld/reports
 ```
 
+### 9. Using "Profiles"
+
+Grind supports `profiles` that can be defined in the `grind.yml` for example:
+
+```yaml
+profiles:
+  dev:
+    flags:
+      - -Xmx2g
+      - -Xss1m
+    envs:
+      API_KEY: "xxx"
+      DATABASE_URL: "postgres://localhost/dev_db"
+  stage:
+    flags:
+      - -Xmx2g
+      - -Xss1m
+    envs:
+      API_KEY: "yyy"
+      DATABASE_URL: "postgres://staging.server/stage_db"
+  prod:
+    flags:
+      - -Xmx5g
+      - -Xss10m
+    envs:
+      API-KEY: "zzz"
+      DATABASE_URL: "postgres://prod.server/prod_db"
+```
+
+Each profile can contain optional `flags` as well as `envs` that are environment variables, to use a profile, simply add the profile name after the `run` or `build`, for example:
+
+```shell
+grind run dev
+grind build prod
+```
+
 ### Dependencies
 
 Grind assumes the following are already installed on your machine:
