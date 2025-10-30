@@ -10,7 +10,7 @@
 
 Compared to modern build tools such as **cargo** and **npm** Java build tools feel outdated and overly complex, and they seem to be relegated to the background only to be used by the IDE or CI/CD tooling.
 
-**grind** is a hassle free, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools? Then maybe it's time to try a new alternative!
+**grind** is a hassle free, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools and really heavy IDEs? Then maybe it's time to try a new alternative! `grind` is perfect for those who prefer "batteries included" CLIs toolchains and lightweight editors such as Visual Studio Code, VIM/Emacs etc.
 
 **grind** simplifies your project workflow by introducing the **`grind.yml`** manifest, providing a single consistent source of truth for all your projects. Write less XML or build configurations, manage builds more efficiently, and get back to writing code!
 
@@ -39,10 +39,10 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
     ```bash
     # For Linux (x86_64)
-    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/grind-x86_64-unknown-linux-musl](https://github.com/anharhussainmiah/grind/releases/download/vX.Y.Z/grind-x86_64-unknown-linux-musl)
+    wget -O grind https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/grind-x86_64-unknown-linux-musl
 
-    # OR for macOS (Apple Silicon/M-series)
-    wget -O grind [https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/grind-aarch64-apple-darwin](https://github.com/anharhussainmiah/grind/releases/download/vX.Y.Z/grind-aarch64-apple-darwin)
+    # OR for macOS
+    wget -O grind https://github.com/anharhussainamiah/grind/releases/download/vX.Y.Z/grind-x86_64-apple-darwin
     ```
 
 2.  **Make it executable**:
@@ -64,16 +64,22 @@ We recommend downloading the appropriate binary for your system from the [GitHub
   - [x] ✅ Handle `<dependencyManagement>` resolution and order of inheritence
   - [x] ✅ Handle cyclic dependency checks
   - [x] ✅ Handle BOM import
+  - [x] ✅ Handle `<optional>` dependencies
   - [x] ✅ Handle property interpolation
   - [ ] ⚠️ Handle exclusions
   - [ ] ⚠️ Handle version ranges and specifiers e.g `>=, <, -` etc _(this will be a fairly massive undertaking!)_
 - [x] ✅ Compile and build Jar file
 - [x] ✅ Compile and run Project
-- [x] ✅ Run a specific task as define in the `grind.yml` manifest
+- [x] ✅ Run a specific task as defined in the `grind.yml` manifest
 - [x] ✅ List all available custom tasks
 - [x] ✅ Add a dependency
 - [x] ✅ Remove a dependency
 - [x] ✅ Testing: using custom test runner [TestTube](https://github.com/AnharHussainMiah/TestTube) built ironically using Grind! _(with built in package integrity checks)_
+- [x] 🧪 Experimental "fat jar" aka `uberjar`
+
+### 🎉 MILESTONE:
+
+`grind` has been tested against the original famous [Pet Clinic Spring Demo](https://github.com/spring-projects/spring-petclinic). We re-created this project using `grind` and as `v0.7.4` able to fully compile, run, and even bundle a fat jar! here is the grind version of the [Pet Clinic](https://github.com/AnharHussainMiah/PetClinicApplication/)
 
 ## Long Term Goals
 
@@ -100,7 +106,7 @@ Once installed, managing your Java projects is only a single command away.
  \______/
 
         - "Java builds, without the headache"
-                    v0.7.0
+                    v0.7.4
 
 
 Usage: grind <COMMAND>
@@ -115,6 +121,7 @@ Commands:
   task       Run a custom task as defiend in the grind.yml, e.g grind task clean
   integrity  Create the integrity file or validate one for plugins/packages
   test       Run Tests
+  bundle     Packages compiled classes and all dependency jars into a single runnable JAR, also known as a "Fat Jar" or "Uberjar"
   help       Print this message or the help of the given subcommand(s)
 
 Options:
@@ -154,7 +161,7 @@ project:
 
 ### 2. Install all dependencies
 
-To install all your projects dependencies that are defined in the `grind.yml` file, simple invoke the following:
+To install all your projects dependencies that are defined in the `grind.yml` file, simply invoke the following:
 
 ```bash
 grind install
@@ -182,7 +189,7 @@ grind remove org.postgresql/posgresql
 
 ### 5. Run the Project
 
-To compile and run your project, simpley invoke the following:
+To compile and run your project, simply invoke the following:
 
 ```bash
 grind run
@@ -203,7 +210,7 @@ So for production you would need to include both your `jar` file as well as the 
 
 ### 7. Optional run custom tasks
 
-Much like the tasks that can be set in the `package.json` grind also has a similar feature, you can list the current available task as follows:
+Much like the tasks that can be set in the `package.json` in `npm`, grind also has a similar feature, you can list the current available tasks as follows:
 
 ```shell
 grind task list
@@ -230,7 +237,7 @@ grind task copy-jar
 
 ### 8. Running Tests
 
-Assuming you have written your test classes _(and have included the Junit dependency)_, to run a specific test or tests simply invoke :
+Assuming you have written your test classes _(and have included the Junit dependency)_, to run a specific test or tests simply invoke:
 
 ```shell
 # run a single test
@@ -283,34 +290,29 @@ Total tests:      1
 
 ### 9. Using "Profiles"
 
-Grind supports `profiles` that can be defined in the `grind.yml` for example:
+Grind supports build and run `profiles` that can be defined in the `grind.yml` for example:
 
 ```yaml
 profiles:
   dev:
     flags:
-      - -Xmx2g
-      - -Xss1m
+      - -parameters
     envs:
       API_KEY: "xxx"
       DATABASE_URL: "postgres://localhost/dev_db"
   stage:
-    flags:
-      - -Xmx2g
-      - -Xss1m
     envs:
       API_KEY: "yyy"
       DATABASE_URL: "postgres://staging.server/stage_db"
   prod:
     flags:
-      - -Xmx5g
-      - -Xss10m
+      - -parameters
     envs:
       API-KEY: "zzz"
       DATABASE_URL: "postgres://prod.server/prod_db"
 ```
 
-Each profile can contain optional `flags` as well as `envs` that are environment variables, to use a profile, simply add the profile name after the `run` or `build`, for example:
+Each profile can contain optional compiler `flags` as well as `envs` that are environment variables, to use a profile, simply add the profile name after the `run` or `build`, for example:
 
 ```shell
 grind run dev
@@ -324,11 +326,24 @@ Grind assumes the following are already installed on your machine:
 - Bash
 - Java
 
-## No FAT Jars!
+## ~~No FAT Jars!~~ Fat Jars!
 
 I was deciding on if `grind` should be able to create "fat Jars", but then I realised that in modern development we end up creating container images. In that context creating a fat jar doesn't make all that sense! AND you potentially lose out on caching!
 
 Instead of creating a fat jar, just copy the `libs` folder, you'll end up with a single container image anyway, but with the advantage of proper caching layers meaning, next time your update your images, it will only update the actual application layer which could be just a few kilobytes vs hundreds of megabytes!
+
+**EDIT:** We now have as of version `v0.7.4` experimental support for fat jars, this can be done simply be using the `bundle` command, this also supports custom compiler flag options via the profiles so for example `grind bundle prod` etc, _but here be dragons!_, while it may work for most projects, if you have some really deep dependencies I'm not sure if the merging logic is 100% at the moment.
+
+## Visual Studio Code Setup
+
+Make sure you have installed the official Microsoft _"Extension Pack for Java"_ extension, and then you can edit the project settings to set the source path as well as the classpath for the libaries, if done correctly you should see a file `.vscode/settings.json` with the following settings:
+
+```json
+{
+  "java.project.referencedLibraries": ["libs/*"],
+  "java.project.sourcePaths": ["src/main/java"]
+}
+```
 
 ## No Windows Support.
 

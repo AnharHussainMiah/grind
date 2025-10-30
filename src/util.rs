@@ -63,6 +63,7 @@ pub fn shell_stream(cmd: &str) -> std::io::Result<()> {
     let mut child = Command::new("bash")
         .arg("-c")
         .arg(cmd)
+        .arg("ls --color=auto")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?; // don't block

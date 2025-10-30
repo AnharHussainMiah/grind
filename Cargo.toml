@@ -1,6 +1,6 @@
 [package]
 name = "grind"
-version = "0.7.3"
+version = "0.7.4"
 edition = "2024"
 
 [dependencies]
@@ -18,3 +18,4 @@ quick-xml = { version = "0.38.3", features = ["serialize"] }
 md5 = "0.8.0"
 walkdir = "2.5.0"
 zip = "6.0.0"
+chrono = "0.4.42"

@@ -18,6 +18,7 @@ mod run;
 mod scaffold;
 mod tasks;
 mod tests;
+mod uberjar;
 mod util;
 
 use crate::build::BuildTarget;
@@ -37,7 +38,7 @@ const LOGO: &str = r#"
  \______/                                   
 
         - "Java builds, without the headache"
-                    v0.7.3
+                    v0.7.4
 "#;
 
 #[derive(Parser, Debug)]
@@ -85,6 +86,11 @@ enum Commands {
     },
     /// Run Tests
     Test { tests: Vec<String> },
+    /// Packages compiled classes and all dependency jars into a single runnable JAR, also known as a "Fat Jar" or "Uberjar"
+    Bundle {
+        /// the defined profile to run with, these include compiler flags, and environment variables
+        profile: Option<String>
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -122,6 +128,7 @@ async fn main() {
             }
         },
         Commands::Test { tests } => self::handle_tests(tests).await,
+        Commands::Bundle {profile } => self::handle_bundle(profile),
     }
 }
 
@@ -243,6 +250,32 @@ pub fn handle_validate_integrity(dir: PathBuf) -> Result<(), String> {
 async fn handle_tests(tests: Vec<String>) {
     if let Some(grind) = util::parse_grind_file() {
         tests::run_tests(grind, tests).await;
+    } else {
+        println!("⚠️ Error: no grind.yml or invalid grind.yml")
+    }
+}
+
+fn handle_bundle(profile: Option<String>) {
+    if let Some(grind) = util::parse_grind_file() {
+        // need to compile classes first
+        let build_flags = if let Some(profile) = profile {
+            self::get_flags(&grind, profile)
+        } else {
+            String::new()
+        };
+
+        util::shell("rm -rf build && mkdir build");
+
+        build::execute_build(&grind, BuildTarget::BuildOnly, build_flags);
+
+        let _ = uberjar::build_fat_jar(&uberjar::FatJarConfig {
+            output_jar: Path::new(&format!("build/{}.jar", grind.project.artifactId)),
+            classes_dir: Path::new("target"),
+            libs_dir: Path::new("libs"),
+            group_id: &grind.project.groupId,
+            artifact_id: &grind.project.artifactId,
+            main_class: &format!("{}.{}", &grind.project.groupId, &grind.project.artifactId),
+        });
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
     }
