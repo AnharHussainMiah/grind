@@ -3,7 +3,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 
 /* -------------------------------------------------------------------------------------------------
-The main struct defining the `grind` project configuration file. Chanching this could potentially be
+The main struct defining the `grind` project configuration file. Changing this could potentially be
 a *breaking* change.
 NOTE: using serde(default) on Option<T> allows for missing fields
 ------------------------------------------------------------------------------------------------- */
