@@ -351,8 +351,6 @@ For other plugins, or editors and LSP, you will need to configure the `classpath
 - classpath, set to `libs/`
 - source path set as `src/java/main`
 
-```
-
 ## No Windows Support.
 
 Techinally `grind` could be made to support Windows _(switching out bash for poweshell, and minor changes in classpaths)_, but I don't have the energy to make that happen! It's open source and I would massively welcome all contributions for any feature(s) that you would really like to see.
@@ -367,4 +365,3 @@ module and keep things as "flat" as possible. I believe keeping the indirection 
 I'm open to contributions, suggestions, and ideas, etc but please be kind!
 
 If you've found this project helpful, please leave a 🌟 or help spread the word!
-```
