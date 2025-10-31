@@ -19,7 +19,7 @@ pub async fn execute_add(grind: Grind, deps: Vec<String>) {
                 artifact = tokens[1].to_string();
             }
         }
-        // handle pinned version
+        // TODO: handle pinned version
         if artifact.contains("@") {
             if let Some((a, v)) = artifact.split_once("@") {
                 let a = a.to_string();
@@ -41,7 +41,6 @@ pub async fn execute_add(grind: Grind, deps: Vec<String>) {
             }
         }
     }
-
     // now that we have a list of resolved candidates lets sync the grind.yml and install
     if !candidates.is_empty() {
         self::update_grind(grind, candidates).await;
@@ -76,15 +75,15 @@ pub async fn execute_remove(mut grind: Grind, deps: Vec<String>) {
             println!("❌ WARNING: no match found for {}/{}", group_id, artifact);
         }
     }
-    // resolve all deps to remove
+
     let resolved = install::resolve_all_deps(candidates).await;
-    // remove them
+
     for dep in resolved {
         if let Err(e) = self::delete_jar(&dep) {
             println!("❌ Failed to download {:?}: {:?}", dep, e);
         }
     }
-    // sync grind.yml
+
     if let Ok(updated) = serde_yaml::to_string(&grind) {
         if fs::write("grind.yml", updated).is_ok() {
             println!("🔃 grind.yml synced..");
@@ -97,7 +96,6 @@ pub async fn execute_remove(mut grind: Grind, deps: Vec<String>) {
 }
 
 fn delete_jar(dep: &Dependency) -> Result<(), std::io::Error> {
-    //let group_path = dep.groupId.replace('.', "/");
     let artifact = &dep.artifactId;
     let version = &dep.version;
 
@@ -111,31 +109,7 @@ fn delete_jar(dep: &Dependency) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-// #[derive(Debug, Deserialize)]
-// struct SolrResponse {
-//     response: ResponseData,
-// }
-
-// #[allow(non_snake_case)]
-// #[derive(Debug, Deserialize)]
-// struct ResponseData {
-//     numFound: u32,
-//     docs: Vec<Doc>,
-// }
-
-// #[derive(Debug, Deserialize, Clone)]
-// struct Doc {
-//     #[serde(rename = "g")]
-//     group_id: String,
-//     #[serde(rename = "a")]
-//     artifact_id: String,
-//     #[serde(rename = "v")]
-//     version: String,
-// }
-
 async fn search_deps(group_id: &str, artifact: &str, _version: &str) -> Option<Dependency> {
-    //let mut query = format!("g:{} AND a:{}", group_id, artifact);
-
     if let Ok((release, _versions)) = metadata::fetch_maven_metadata(group_id, artifact).await {
         if let Some(v) = release {
             println!("✅ Match Found: {}/{} v{}", &group_id, &artifact, &v);
@@ -148,54 +122,6 @@ async fn search_deps(group_id: &str, artifact: &str, _version: &str) -> Option<D
             });
         }
     }
-
-    // if !version.is_empty() {
-    //     query = format!("{} AND v:\"{}\"", query, version);
-    // }
-
-    // println!("DEBUG: {}", query);
-
-    // let url = format!(
-    //     "https://search.maven.org/solrsearch/select?q={}&rows=1&core=gav&wt=json&sort=version+desc",
-    //     urlencoding::encode(&query)
-    // );
-
-    // let client = Client::builder().user_agent("curl/8.5.0").build().unwrap();
-
-    // match client.get(url).send().await {
-    //     Ok(response) => {
-    //         let body = response.text().await;
-
-    //         let j = match body {
-    //             Ok(b) => b,
-    //             Err(e) => {
-    //                 println!("⚠️ ERROR: Unable to extract Reponse Body");
-    //                 e.to_string()
-    //             }
-    //         };
-
-    //         let parsed: SolrResponse = serde_json::from_str(&j).unwrap();
-
-    //         if parsed.response.numFound > 1 {
-    //             println!(
-    //                 "✅ Match Found: {}/{} v{}",
-    //                 &parsed.response.docs[0].group_id,
-    //                 &parsed.response.docs[0].artifact_id,
-    //                 &parsed.response.docs[0].version
-    //             );
-    //             let doc = parsed.response.docs[0].clone();
-
-    //             return Some(Dependency {
-    //                 groupId: doc.group_id,
-    //                 artifactId: doc.artifact_id,
-    //                 version: doc.version,
-    //                 scope: Some("runtime".to_string()),
-    //             });
-    //         }
-    //     }
-    //     Err(e) => println!("⚠️ ERROR: {}", e),
-    // };
-
     None
 }
 

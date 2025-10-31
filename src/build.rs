@@ -77,6 +77,6 @@ pub fn execute_build(grind: &Grind, target: BuildTarget, build_flags: String) {
 
     shell("cp -r src/main/resources/. target/");
 
-    // clean up extra folders
+    // not sure why javac seems to create some extra folders, but lets clean them up
     shell(&format!("rm -rf {}/", grind.project.artifactId));
 }

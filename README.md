@@ -195,6 +195,14 @@ To compile and run your project, simply invoke the following:
 grind run
 ```
 
+The run command can include the `profile` (see section 9) as well as command line arguments to forward to your compiled application e.g:
+
+```bash
+grind run dev arg1 arg2 arg2
+```
+
+In the above, the first argument is the "profile" and the remaining arguments are passed through as is. If **no profile matches**, then they're all treated as arguments.
+
 ### 6. Compile and Package up a final Jar executable
 
 To build your production `jar` simply invoke the following:
@@ -334,15 +342,15 @@ Instead of creating a fat jar, just copy the `libs` folder, you'll end up with a
 
 **EDIT:** We now have as of version `v0.7.4` experimental support for fat jars, this can be done simply be using the `bundle` command, this also supports custom compiler flag options via the profiles so for example `grind bundle prod` etc, _but here be dragons!_, while it may work for most projects, if you have some really deep dependencies I'm not sure if the merging logic is 100% at the moment.
 
-## Visual Studio Code Setup
+## Visual Studio Code Support
 
-Make sure you have installed the official Microsoft _"Extension Pack for Java"_ extension, and then you can edit the project settings to set the source path as well as the classpath for the libaries, if done correctly you should see a file `.vscode/settings.json` with the following settings:
+Make sure you have installed the official Microsoft _"Extension Pack for Java"_ extension, `grind` will automatically generate the correct settings for it under `.vscode/settings.json` when a new project is created, so you can just open the project and start coding!
 
-```json
-{
-  "java.project.referencedLibraries": ["libs/*"],
-  "java.project.sourcePaths": ["src/main/java"]
-}
+For other plugins, or editors and LSP, you will need to configure the `classpath` as well as the source paths e.g:
+
+- classpath, set to `libs/`
+- source path set as `src/java/main`
+
 ```
 
 ## No Windows Support.
@@ -359,3 +367,4 @@ module and keep things as "flat" as possible. I believe keeping the indirection 
 I'm open to contributions, suggestions, and ideas, etc but please be kind!
 
 If you've found this project helpful, please leave a 🌟 or help spread the word!
+```

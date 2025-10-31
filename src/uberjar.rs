@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::Path;
-use std::time::{Instant, SystemTime};
+use std::time::Instant;
 
 use zip::{ZipArchive, ZipWriter, write::FileOptions};
 
@@ -15,7 +15,6 @@ pub struct FatJarConfig<'a> {
     pub artifact_id: &'a str,
 }
 
-/// Build a runnable "fat jar" (includes all dependencies).
 pub fn build_fat_jar(config: &FatJarConfig) -> io::Result<()> {
     let start_time = Instant::now();
 
@@ -34,14 +33,12 @@ pub fn build_fat_jar(config: &FatJarConfig) -> io::Result<()> {
     println!(" → Libs: {}", config.libs_dir.display());
     println!(" → Main-Class: {}", config.main_class);
 
-    // 1. Manifest
     let manifest = generate_manifest(config);
     writer.start_file("META-INF/MANIFEST.MF", options)?;
     writer.write_all(manifest.as_bytes())?;
     seen_entries.insert("META-INF/MANIFEST.MF".into());
     println!("+ manifest: META-INF/MANIFEST.MF");
 
-    // 2. Application classes/resources
     let mut file_count = 0;
     add_directory_classes(
         config.classes_dir,
@@ -50,7 +47,6 @@ pub fn build_fat_jar(config: &FatJarConfig) -> io::Result<()> {
         &mut file_count,
     )?;
 
-    // 3. Dependencies with progress bar showing count
     let jars: Vec<_> = fs::read_dir(config.libs_dir)?
         .filter_map(Result::ok)
         .map(|e| e.path())
@@ -81,10 +77,9 @@ pub fn build_fat_jar(config: &FatJarConfig) -> io::Result<()> {
     }
 
     if total > 0 {
-        println!(); // newline after progress bar
+        println!();
     }
 
-    // 4. Write merged service/spring resources
     for (name, data) in merged_resources {
         if seen_entries.insert(name.clone()) {
             writer.start_file(&name, options)?;
@@ -110,9 +105,6 @@ pub fn build_fat_jar(config: &FatJarConfig) -> io::Result<()> {
 }
 
 fn generate_manifest(config: &FatJarConfig) -> String {
-    let now = SystemTime::now();
-    let date = chrono::DateTime::<chrono::Utc>::from(now).to_rfc2822();
-
     format!(
         "Manifest-Version: 1.0\n\
          Main-Class: {main}\n\

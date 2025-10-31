@@ -1,4 +1,5 @@
 use crate::Grind;
+use std::cmp::Ordering;
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -38,6 +39,7 @@ pub fn shell(cmd: &str) -> String {
     result.trim().to_string()
 }
 
+#[allow(dead_code)]
 pub fn shell_result(cmd: &str) -> Result<String, String> {
     let output = Command::new("bash")
         .arg("-c")
@@ -63,10 +65,10 @@ pub fn shell_stream(cmd: &str) -> std::io::Result<()> {
     let mut child = Command::new("bash")
         .arg("-c")
         .arg(cmd)
-        .arg("ls --color=auto")
+        .arg("--color=auto")
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .spawn()?; // don't block
+        .spawn()?;
 
     let stdout = child.stdout.take().expect("Failed to capture stdout");
     let stderr = child.stderr.take().expect("Failed to capture stderr");
@@ -86,7 +88,6 @@ pub fn shell_stream(cmd: &str) -> std::io::Result<()> {
         println!("{}", line);
     }
 
-    // Wait for the process to finish
     let status = child.wait()?;
     println!("Process exited with: {}", status);
 
@@ -115,7 +116,6 @@ pub fn ls_with_ext(dir: &str, extension: &str) -> std::io::Result<Vec<String>> {
 }
 
 pub fn unzip_file(zip_path: &Path, destination: &Path) -> zip::result::ZipResult<()> {
-    // Open the zip file
     let zip_file = File::open(zip_path)?;
     let mut archive = ZipArchive::new(zip_file)?;
 
@@ -123,11 +123,9 @@ pub fn unzip_file(zip_path: &Path, destination: &Path) -> zip::result::ZipResult
         let mut file = archive.by_index(i)?;
         let outpath = destination.join(file.name());
 
-        // If it's a directory, create it
         if file.is_dir() {
             fs::create_dir_all(&outpath)?;
         } else {
-            // If it's a file, create any missing parent directories, then write it
             if let Some(parent) = outpath.parent() {
                 if !parent.exists() {
                     fs::create_dir_all(parent)?;
@@ -151,9 +149,6 @@ pub fn unzip_file(zip_path: &Path, destination: &Path) -> zip::result::ZipResult
     Ok(())
 }
 
-use std::cmp::Ordering;
-
-/// Known Maven qualifier ranking
 fn qualifier_rank(q: &str) -> i32 {
     match q.to_ascii_lowercase().as_str() {
         "snapshot" => 1,
@@ -167,7 +162,6 @@ fn qualifier_rank(q: &str) -> i32 {
     }
 }
 
-/// Split a token into numeric part, qualifier letters, qualifier number
 fn split_token(token: &str) -> (u64, String, u64) {
     let mut digits = String::new();
     let mut letters = String::new();
@@ -191,14 +185,12 @@ fn split_token(token: &str) -> (u64, String, u64) {
     (number, letters, qnum)
 }
 
-/// Extract tokens from version string
 fn extract_tokens(v: &str) -> Vec<(u64, String, u64)> {
     v.split(|c| c == '.' || c == '-' || c == '_')
         .map(split_token)
         .collect()
 }
 
-/// Compare two Maven-style versions with proper qualifiers
 pub fn compare_maven_versions(v1: &str, v2: &str) -> Ordering {
     let tokens1 = extract_tokens(v1);
     let tokens2 = extract_tokens(v2);
@@ -209,24 +201,20 @@ pub fn compare_maven_versions(v1: &str, v2: &str) -> Ordering {
         let (n1, q1, qn1) = tokens1.get(i).cloned().unwrap_or((0, "".into(), 0));
         let (n2, q2, qn2) = tokens2.get(i).cloned().unwrap_or((0, "".into(), 0));
 
-        // Compare main numeric
         if n1 != n2 {
             return n1.cmp(&n2);
         }
 
-        // Compare qualifier rank
         let r1 = qualifier_rank(&q1);
         let r2 = qualifier_rank(&q2);
         if r1 != r2 {
             return r1.cmp(&r2);
         }
 
-        // Compare qualifier numeric
         if qn1 != qn2 {
             return qn1.cmp(&qn2);
         }
 
-        // Fallback: lex comparison for unknown qualifiers
         if q1 != q2 {
             return q1.cmp(&q2);
         }

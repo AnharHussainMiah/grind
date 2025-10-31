@@ -38,7 +38,7 @@ const LOGO: &str = r#"
  \______/                                   
 
         - "Java builds, without the headache"
-                    v0.7.4
+                    v0.7.5
 "#;
 
 #[derive(Parser, Debug)]
@@ -60,12 +60,12 @@ enum Commands {
     /// Compile the project and builds a jar file.
     Build {
         /// the defined profile to build with, these include compiler flags, and environment variables
-        profile: Option<String>,
+        profile: Vec<String>,
     },
     /// Compile and run the project
     Run {
         /// the defined profile to run with, these include compiler flags, and environment variables
-        profile: Option<String>,
+        profile: Vec<String>,
     },
     /// Adds a dependency to the project's grind.yml
     Add {
@@ -89,7 +89,7 @@ enum Commands {
     /// Packages compiled classes and all dependency jars into a single runnable JAR, also known as a "Fat Jar" or "Uberjar"
     Bundle {
         /// the defined profile to run with, these include compiler flags, and environment variables
-        profile: Option<String>
+        profile: Vec<String>,
     },
 }
 
@@ -128,7 +128,7 @@ async fn main() {
             }
         },
         Commands::Test { tests } => self::handle_tests(tests).await,
-        Commands::Bundle {profile } => self::handle_bundle(profile),
+        Commands::Bundle { profile } => self::handle_bundle(profile),
     }
 }
 
@@ -152,15 +152,11 @@ fn handle_new(name: &str) {
     }
 }
 
-fn handle_build(profile: Option<String>) {
+fn handle_build(profile: Vec<String>) {
     if let Some(grind) = util::parse_grind_file() {
-        let mut flags = String::new();
+        let args = self::get_run_args(&grind, profile);
 
-        if let Some(profile) = profile {
-            flags = self::get_flags(&grind, profile);
-        }
-
-        build::execute_build(&grind, BuildTarget::IncludeJar, flags);
+        build::execute_build(&grind, BuildTarget::IncludeJar, args.flags);
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
     }
@@ -174,9 +170,11 @@ async fn handle_install() {
     }
 }
 
-fn handle_run(profile: Option<String>) {
+fn handle_run(profile: Vec<String>) {
     if let Some(grind) = util::parse_grind_file() {
-        run::execute_run(grind, profile);
+        let args = self::get_run_args(&grind, profile);
+
+        run::execute_run(grind, &args);
     } else {
         println!("⚠️ Error: no grind.yml or invalid grind.yml")
     }
@@ -255,18 +253,13 @@ async fn handle_tests(tests: Vec<String>) {
     }
 }
 
-fn handle_bundle(profile: Option<String>) {
+fn handle_bundle(profile: Vec<String>) {
     if let Some(grind) = util::parse_grind_file() {
         // need to compile classes first
-        let build_flags = if let Some(profile) = profile {
-            self::get_flags(&grind, profile)
-        } else {
-            String::new()
-        };
 
-        util::shell("rm -rf build && mkdir build");
+        let args = self::get_run_args(&grind, profile);
 
-        build::execute_build(&grind, BuildTarget::BuildOnly, build_flags);
+        build::execute_build(&grind, BuildTarget::BuildOnly, args.flags);
 
         let _ = uberjar::build_fat_jar(&uberjar::FatJarConfig {
             output_jar: Path::new(&format!("build/{}.jar", grind.project.artifactId)),
@@ -292,6 +285,46 @@ pub fn get_flags(grind: &Grind, profile: String) -> String {
         }
     }
     flags
+}
+
+
+struct RunArgs {
+    flags: String,
+    envs: String,
+    args: Vec<String>
+}
+
+fn get_run_args(grind: &Grind, args: Vec<String>) -> RunArgs {
+    /* ---------------------------------------------------------------------------------------------
+    because we have a list of arguments provided, there is some overlap in the sense the first
+    argument is ambiguous, because it could mean the "profile" OR it could just be the first normal
+    argument. This function takes the first argument and sees if any profiles match. If there is a
+    match we simply "consume" it from the list and return the flags + envs + args e.g:
+
+    -> profile:
+            \_ flags
+            \_ envs
+
+    -> rest of args
+    --------------------------------------------------------------------------------------------- */
+    let mut xargs = args.clone();
+    let mut flags = String::new();
+    let mut envs = String::new();
+
+    if let Some(profile) = xargs.first() {
+        flags = self::get_flags(&grind, profile.to_string());
+        envs = self::get_envs(&grind, profile.to_string());
+
+        if !flags.is_empty() || !envs.is_empty() {
+            xargs.remove(0);
+        }
+    }
+
+    RunArgs {
+        flags: flags,
+        envs: envs,
+        args: xargs
+    }
 }
 
 pub fn get_envs(grind: &Grind, profile: String) -> String {

@@ -1,35 +1,24 @@
 use crate::Grind;
 use crate::build;
-use crate::get_envs;
-use crate::get_flags;
 use crate::util::shell_stream;
+use crate::RunArgs;
 
 use crate::BuildTarget;
 
-pub fn execute_run(grind: Grind, profile: Option<String>) {
-    let mut flags = String::new();
-    let mut envs = String::new();
+pub fn execute_run(grind: Grind, args: &RunArgs) {
 
-    if let Some(profile) = profile {
-        flags = get_flags(&grind, profile.clone());
-        envs = get_envs(&grind, profile);
-    }
-
-    build::execute_build(&grind, BuildTarget::BuildOnly, flags);
+    build::execute_build(&grind, BuildTarget::BuildOnly, args.flags.to_string());
     println!("==> 🚀 running project [{}]...", grind.project.artifactId);
 
     let mut cmd = format!(
-        "java -cp \"target:libs/*\" {}.{}",
-        grind.project.groupId, grind.project.artifactId
+        "java -cp \"target:libs/*\" {}.{} {}",
+        grind.project.groupId, grind.project.artifactId,
+        args.args.join(" ")
     );
 
-    if !envs.is_empty() {
-        cmd = format!("{} {}", envs, cmd);
+    if !args.envs.is_empty() {
+        cmd = format!("{} {}", args.envs, cmd);
     }
-
     // println!("DEBUG: using cmd -> '{}'", cmd);
     let _ = shell_stream(&cmd);
-    // if !out.is_empty() {
-    //     println!("{}", out);
-    // }
 }

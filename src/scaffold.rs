@@ -16,7 +16,7 @@ pub fn create(namespace: &str, artifact_id: &str) {
     self::create_libs_dir(artifact_id);
     self::create_gitignore_file(artifact_id);
     self::create_readme_file(artifact_id);
-
+    self::create_vs_code_settings(artifact_id);
     self::create_src_and_namespace(namespace, artifact_id);
     self::create_java_file(namespace, artifact_id);
     self::create_grind_file(namespace, artifact_id);
@@ -37,6 +37,9 @@ build/*
 cache/*
 plugins/*
 reports/*
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
 "#;
     std::fs::write(format!("{}/.gitignore", artifact_id), gitignore).unwrap();
     println!("==> created .gitignore file");
@@ -67,6 +70,19 @@ $ grind build
 
     std::fs::write(format!("{}/README.md", artifact_id), readme).unwrap();
     println!("==> created README.md file");
+}
+
+fn create_vs_code_settings(artifact_id: &str) {
+    let settings: &str = r#"{
+  "java.project.referencedLibraries": ["libs/*"],
+  "java.project.sourcePaths": ["src/main/java"]
+}
+"#;
+
+    std::fs::create_dir_all(format!("{}/.vscode", artifact_id)).unwrap();
+
+    std::fs::write(format!("{}/.vscode/settings.json", artifact_id), settings).unwrap();
+    println!("==> created settings.json file");
 }
 
 fn create_libs_dir(artifact_id: &str) {

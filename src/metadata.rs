@@ -3,7 +3,9 @@ use serde::Deserialize;
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
 struct Metadata {
+    #[allow(dead_code)]
     groupId: String,
+    #[allow(dead_code)]
     artifactId: String,
     versioning: Versioning,
 }
@@ -23,7 +25,6 @@ pub async fn fetch_maven_metadata(
     group_id: &str,
     artifact_id: &str,
 ) -> Result<(Option<String>, Vec<String>), String> {
-    // Convert groupId into Maven repo path
     let group_path = group_id.replace('.', "/");
     let url = format!(
         "https://repo1.maven.org/maven2/{}/{}/maven-metadata.xml",
@@ -32,7 +33,6 @@ pub async fn fetch_maven_metadata(
 
     println!("🌎 Fetching metadata from: {}", url);
 
-    // Fetch the metadata XML
     let xml_data = reqwest::get(&url)
         .await
         .map_err(|e| e.to_string())?
@@ -40,9 +40,7 @@ pub async fn fetch_maven_metadata(
         .await
         .map_err(|e| e.to_string())?;
 
-    // Parse XML using serde_xml_rs
     let metadata: Metadata = serde_xml_rs::from_str(&xml_data).map_err(|e| e.to_string())?;
-
     let release = metadata.versioning.release;
     let versions = metadata.versioning.versions.version;
 

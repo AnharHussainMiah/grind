@@ -16,7 +16,6 @@ use tokio::io::AsyncWriteExt;
 // use crate::mock::FAKE_POM;
 
 pub async fn execute_install(grind: Grind) {
-    // first check the lock file
     if let Ok(locked) = lock::get_lock_file()
         && grind.project.dependencies == locked.inputDeps
     {
@@ -32,7 +31,7 @@ pub async fn execute_install(grind: Grind) {
     let mut resolved = self::resolve_all_deps(grind.project.dependencies.clone()).await;
 
     if let Ok(locked) = lock::get_lock_file() {
-        // we need to merge with existing downloaded deps from before
+        // we need to merge with existing downloaded deps along with the newer resolved deps
         resolved.extend(locked.lockedDeps);
     };
 
@@ -63,7 +62,6 @@ pub async fn execute_install(grind: Grind) {
             println!("⚠️ Failed to download [{:?}]: {:?}", dep, e);
         }
     }
-    // lock deps
     lock::lock_file(&grind.project.dependencies, &resolved.into_iter().collect());
 }
 
@@ -139,7 +137,6 @@ async fn fetch_deps(dep: &Dependency) -> Vec<Dependency> {
 pub async fn get_pom(dep: Dependency) -> String {
     // return FAKE_POM.to_string();
 
-    // check cache
     if let Ok(_) = tokio::fs::create_dir_all("cache").await {
         let pom_name = format!("{}_{}_{}.pom", dep.groupId, dep.artifactId, dep.version);
         let local_path = format!("cache/{}", pom_name);
@@ -165,7 +162,6 @@ pub async fn get_pom(dep: Dependency) -> String {
 
         return match body {
             Ok(b) => {
-                // cache POM
                 let pom_name = format!("{}_{}_{}.pom", dep.groupId, dep.artifactId, dep.version);
                 let local_path = format!("cache/{}", pom_name);
                 tokio::fs::write(local_path, b.clone())
@@ -192,22 +188,18 @@ async fn download_jar(dep: &Dependency) -> Result<(), String> {
     let artifact = &dep.artifactId;
     let version = &dep.version;
 
-    // ✅ Flattened JAR filename
     let jar_name = format!("{}_{}_{}.jar", dep.groupId, artifact, version);
     let local_path = format!("libs/{}", jar_name);
 
-    // ✅ Skip if already exists
     if Path::new(&local_path).exists() {
         println!("📦 Already exists, skipping: {}", local_path);
         return Ok(());
     }
 
-    // ✅ Ensure "lib" directory exists
     fs::create_dir_all("libs")
         .await
         .map_err(|e| e.to_string())?;
 
-    // ✅ Maven Central URL
     let url = format!(
         "https://repo1.maven.org/maven2/{}/{}/{}/{}-{}.jar",
         group_path, artifact, version, artifact, version
@@ -277,19 +269,13 @@ fn fix_collisions(deps: HashSet<Dependency>) -> HashSet<Dependency> {
 }
 
 fn is_version_newer(source: &str, target: &str) -> bool {
-    // source < targer
     return util::compare_maven_versions(source, target) == Ordering::Less;
-    // if let (Ok(s), Ok(t)) = (Version::parse(source), Version::parse(target)) {
-
-    // }
-    // true
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::config::Dependency;
-    // use semver::Version;
 
     #[test]
     fn test_deduplicate_dependencies() {
@@ -305,14 +291,14 @@ mod tests {
         deps.insert(Dependency {
             groupId: "xml-resolver".to_string(),
             artifactId: "xml-resolver".to_string(),
-            version: String::from("1.2"), // Should be kept
+            version: String::from("1.2"), // <- Should be kept, 1.2 is newer
             scope: None,
         });
 
         deps.insert(Dependency {
             groupId: "com.example".to_string(),
             artifactId: "lib2".to_string(),
-            version: String::from("0.9.1"), // Only one, should be kept
+            version: String::from("0.9.1"), // <- Should be kept, unique
             scope: None,
         });
 
@@ -326,13 +312,13 @@ mod tests {
         deps.insert(Dependency {
             groupId: "org.other".to_string(),
             artifactId: "lib3".to_string(),
-            version: String::from("3.2.0"), // Should be kept
+            version: String::from("3.2.0"), // <- Should be kept, 3.2.0 is newer
             scope: None,
         });
 
         let result = fix_collisions(deps);
 
-        // Should contain only 3 dependencies: latest of lib1, lib2, and lib3
+        // Should contain only 3 dependencies: latest of xml-resolver, lib2, and lib3
         assert_eq!(result.len(), 3);
 
         // Check that correct versions are picked

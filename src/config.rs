@@ -2,6 +2,12 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
 
+/* -------------------------------------------------------------------------------------------------
+The main struct defining the `grind` project configuration file. Chanching this could potentially be
+a *breaking* change.
+NOTE: using serde(default) on Option<T> allows for missing fields
+------------------------------------------------------------------------------------------------- */
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Grind {
     pub project: Project,
@@ -39,6 +45,6 @@ pub struct Dependency {
     #[allow(non_snake_case)]
     pub artifactId: String,
     pub version: String,
-    #[serde(default)] // Optional field: default to None if missing
+    #[serde(default)]
     pub scope: Option<String>,
 }

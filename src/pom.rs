@@ -1,13 +1,11 @@
 use crate::config;
 use crate::install;
+use quick_xml::de::Deserializer as XmlDeserializer;
 use serde::Deserialize;
+use serde_path_to_error as path;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
-use std::ops::Deref;
-use std::ops::DerefMut;
-
-use quick_xml::de::Deserializer as XmlDeserializer;
-use serde_path_to_error as path;
+use std::ops::{Deref, DerefMut};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PomId {
@@ -22,7 +20,6 @@ impl fmt::Display for PomId {
     }
 }
 
-/// Represents a final, resolved dependency with a concrete version.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EffectiveDependency {
     pub group_id: String,
@@ -31,27 +28,10 @@ pub struct EffectiveDependency {
     pub scope: Option<String>,
 }
 
-/// The main entry point for the dependency resolution process.
-///
-/// This function takes a root POM identifier and a HashSet of already visited POMs
-/// to prevent infinite recursion. It orchestrates the entire resolution process,
-/// including walking the parent hierarchy, handling import scopes, and resolving
-/// dependency versions.
-///
-/// # Arguments
-///
-/// * `root_pom_id` - The `PomId` of the project whose dependencies you want to resolve.
-/// * `visited` - A mutable `HashSet` to track visited POMs and detect cyclical dependencies.
-///
-/// # Returns
-///
-/// * `Option<Vec<EffectiveDependency>>` - Returns a vector of resolved dependencies on success,
-///   or `None` if any part of the process fails (e.g., network error, parsing error, cyclical dependency).
 pub async fn get_effective_dependencies(
     root_pom_id: PomId,
     visited: &mut HashSet<PomId>,
 ) -> Option<Vec<EffectiveDependency>> {
-    // Start the recursive context resolution.
     match resolve_context_recursive(&root_pom_id, visited).await {
         Ok((pom, context)) => {
             // If context resolution is successful, calculate the final dependencies.
@@ -75,7 +55,6 @@ pub async fn get_effective_dependencies(
                         scope: dep.scope.clone().or(Some("compile".to_string())),
                     };
 
-                    // skip if "optional" is set to "true"
                     let mut is_optional = false;
                     if let Some(optional) = dep.optional {
                         if optional.contains("true") {
@@ -92,31 +71,23 @@ pub async fn get_effective_dependencies(
             Some(effective_deps)
         }
         Err(e) => {
-            // If any error occurs during the recursive walk, print it and return None.
             eprintln!("Failed to resolve dependencies for {}: {}", root_pom_id, e);
             None
         }
     }
 }
 
-/// Internal context that gets passed and merged down the recursion.
 #[derive(Debug, Clone, Default)]
 struct ResolutionContext {
-    /// Maps "groupId:artifactId" to a managed Dependency.
     dependency_management: HashMap<String, Dependency>,
-    /// All inherited and local properties.
     properties: HashMap<String, String>,
 }
 
-/// The core recursive function that builds the resolution context.
-/// It walks "up" to the root, then merges properties and dependencies on the way "down".
 async fn resolve_context_recursive(
     pom_id: &PomId,
     visited: &mut HashSet<PomId>,
 ) -> Result<(Pom, ResolutionContext), String> {
-    // --- 1. Cycle Detection ---
     if visited.contains(pom_id) {
-        // --- 2. Fetch and Parse the current POM ---
         let pom_xml = install::get_pom(config::Dependency {
             groupId: pom_id.group_id.clone(),
             artifactId: pom_id.artifact_id.clone(),
@@ -127,15 +98,12 @@ async fn resolve_context_recursive(
 
         // println!("DEBUG: Parsing POM {:?}", pom_id);
         let pom = parse_pom_from_str(&pom_xml)?;
-
-        // return Err(format!("Cyclic dependency detected: {}", pom_id));
         println!("Cyclic dependency detected: {}", pom_id);
         return Ok((pom, ResolutionContext::default()));
     }
 
     visited.insert(pom_id.clone());
 
-    // --- 2. Fetch and Parse the current POM ---
     let pom_xml = install::get_pom(config::Dependency {
         groupId: pom_id.group_id.clone(),
         artifactId: pom_id.artifact_id.clone(),
@@ -147,14 +115,14 @@ async fn resolve_context_recursive(
     // println!("DEBUG: Parsing POM {:?}", pom_id);
     let mut pom = parse_pom_from_str(&pom_xml)?;
 
-    // --- 3. Parent Resolution ("Walk Up") ---
+    // Parent Resolution "Walk Up"
     let (mut context, parent_pom) = if let Some(parent) = &pom.parent {
         let parent_id = PomId {
             group_id: parent.group_id.clone(),
             artifact_id: parent.artifact_id.clone(),
             version: parent.version.clone(),
         };
-        // Recursively call for the parent to get its context.
+
         let (parent_pom, parent_context) =
             Box::pin(resolve_context_recursive(&parent_id, visited)).await?;
         (parent_context, Some(parent_pom))
@@ -170,7 +138,7 @@ async fn resolve_context_recursive(
         pom.version = pom.parent.as_ref().map(|p| p.version.clone());
     }
 
-    // --- 4. Properties Merging ("Walk Down") ---
+    // Merge properties "Walk Down"
     // Add project-specific properties. These can be used to resolve versions.
     let mut current_properties = HashMap::new();
     if let Some(gid) = &pom.group_id {
@@ -183,7 +151,7 @@ async fn resolve_context_recursive(
         current_properties.insert("project.version".to_string(), ver.clone());
     }
 
-    // Parent properties are applied first.
+    // NOTE: (order or precedence): parent properties are applied first
     if let Some(p_pom) = parent_pom {
         if let Some(p_gid) = p_pom.group_id {
             current_properties.insert("project.parent.groupId".to_string(), p_gid);
@@ -193,12 +161,10 @@ async fn resolve_context_recursive(
         }
     }
 
-    // Child properties overwrite parent properties.
+    // NOTE: (order or precedence): Child properties overwrite parent properties.
     context.properties.extend(current_properties);
     context.properties.extend(pom.properties.clone());
 
-    // --- 5. Dependency Management Merging ---
-    // Merge the current POM's dependency management into the context.
     for dep in pom.dependency_management.dependencies.dependency.iter() {
         let key = format!("{}:{}", dep.group_id, dep.artifact_id);
         // println!("DEBUG: key {:?} | {:?}", key, dep.scope);
@@ -209,8 +175,7 @@ async fn resolve_context_recursive(
             .or_insert_with(|| dep.clone());
     }
 
-    // --- 6. Import Scope Resolution ("Walk Sideways") ---
-    // We iterate over a clone because we might be modifying the context inside the loop.
+    // BOM resolution "Walk sideways"
     let managed_deps_clone = context
         .dependency_management
         .values()
@@ -226,12 +191,10 @@ async fn resolve_context_recursive(
                 version,
             };
 
-            // Recursively resolve the imported BOM (Bill of Materials).
             let (_, import_context) =
                 Box::pin(resolve_context_recursive(&import_pom_id, visited)).await?;
 
-            // Merge the imported BOM's dependency management.
-            // Importantly, existing entries in the current context are NOT overwritten.
+            // NOTE: existing enteries must be preserved
             for (key, val) in import_context.dependency_management {
                 context.dependency_management.entry(key).or_insert(val);
             }
@@ -241,16 +204,12 @@ async fn resolve_context_recursive(
     Ok((pom, context))
 }
 
-/// Parses a POM file from an XML string.
 fn parse_pom_from_str(pom_xml: &str) -> Result<Pom, String> {
     let mut deserializer = XmlDeserializer::from_str(pom_xml);
     let result: Result<Pom, _> = path::deserialize(&mut deserializer);
     result.map_err(|e| format!("Error at {}: {}", e.path(), e))
 }
 
-// from_str(pom_xml).map_err(|e| e.to_string())
-
-/// Substitutes property placeholders in a string.
 fn substitute_properties(value: &str, properties: &HashMap<String, String>) -> String {
     let mut result = value.to_string();
     for (key, val) in properties {
@@ -259,11 +218,6 @@ fn substitute_properties(value: &str, properties: &HashMap<String, String>) -> S
     }
     result
 }
-
-//
-// Serde Structs for XML Deserialization
-// These structs map directly to the structure of a pom.xml file.
-//
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -306,7 +260,6 @@ impl DerefMut for Properties {
     }
 }
 
-// Make it usable in `for` loops, `.extend()`, etc.
 impl IntoIterator for Properties {
     type Item = (String, String);
     type IntoIter = <HashMap<String, String> as IntoIterator>::IntoIter;
