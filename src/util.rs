@@ -1,11 +1,16 @@
 use crate::Grind;
+use flate2::read::GzDecoder;
 use std::cmp::Ordering;
+use std::collections::HashSet;
+use std::env;
 use std::fs;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
+use std::os::unix::fs::symlink;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use tar::Archive;
 use zip::ZipArchive;
 
 pub fn parse_grind_file() -> Option<Grind> {
@@ -144,6 +149,94 @@ pub fn unzip_file(zip_path: &Path, destination: &Path) -> zip::result::ZipResult
                 fs::set_permissions(&outpath, fs::Permissions::from_mode(mode))?;
             }
         }
+    }
+
+    Ok(())
+}
+
+pub fn expand_tilde(path: &str) -> Option<PathBuf> {
+    if path.starts_with('~') {
+        let home = env::var("HOME").ok()?;
+        return Some(PathBuf::from(home).join(path[1..].trim_start_matches('/')));
+    }
+    Some(PathBuf::from(path))
+}
+
+pub fn dir_exists(path_str: &str) -> bool {
+    if let Some(expanded_path) = self::expand_tilde(path_str) {
+        return match std::fs::metadata(&expanded_path) {
+            Ok(meta) => meta.is_dir(),
+            Err(e) => {
+                eprintln!("Error accessing '{}': {}", expanded_path.display(), e);
+                return false;
+            }
+        };
+    }
+    false
+}
+
+pub fn create_symlink(target: &str, link_name: &str) -> bool {
+    let target_path = match expand_tilde(target) {
+        Some(p) => p,
+        None => {
+            eprintln!("Failed to expand target path '{}'", target);
+            return false;
+        }
+    };
+
+    let link_path = match expand_tilde(link_name) {
+        Some(p) => p,
+        None => {
+            eprintln!("Failed to expand link path '{}'", link_name);
+            return false;
+        }
+    };
+
+    let _ = std::fs::remove_file(&link_path);
+
+    if let Err(e) = symlink(&target_path, &link_path) {
+        eprintln!("Failed to create symlink '{}': {}", link_path.display(), e);
+        return false;
+    }
+    true
+}
+
+pub fn extract_tar_gz(
+    archive_path: &Path,
+    target_dir: &Path,
+    rename_dir: &Path,
+) -> Result<(), String> {
+    fs::create_dir_all(target_dir).map_err(|e| e.to_string())?;
+
+    // Record existing entries before extraction, a bit silly but don't know how else to
+    // figure out the extracted folder name
+    let before: HashSet<String> = fs::read_dir(target_dir)
+        .map_err(|e| e.to_string())?
+        .filter_map(|e| e.ok())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .collect();
+
+    let tar_gz = File::open(archive_path).map_err(|e| e.to_string())?;
+    let decompressor = GzDecoder::new(tar_gz);
+    let mut archive = Archive::new(decompressor);
+
+    archive.unpack(target_dir).map_err(|e| e.to_string())?;
+
+    let after: HashSet<String> = fs::read_dir(target_dir)
+        .map_err(|e| e.to_string())?
+        .filter_map(|e| e.ok())
+        .filter_map(|e| e.file_name().into_string().ok())
+        .collect();
+
+    let new_entries: Vec<_> = after.difference(&before).cloned().collect();
+
+    if !new_entries.is_empty() {
+        let path = target_dir.join(new_entries[0].clone());
+        if path.is_dir() {
+            fs::rename(path, rename_dir).map_err(|e| e.to_string())?;
+        }
+    } else {
+        return Err("Unable to find extracted tar file!".to_string());
     }
 
     Ok(())

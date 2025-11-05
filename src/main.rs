@@ -9,6 +9,7 @@ mod build;
 mod config;
 mod install;
 mod integrity;
+mod java;
 mod lock;
 mod manage;
 mod metadata;
@@ -23,6 +24,7 @@ mod util;
 
 use crate::build::BuildTarget;
 use crate::config::Grind;
+use crate::util::shell;
 
 const LOGO: &str = r#"
                      /$$                 /$$
@@ -38,7 +40,7 @@ const LOGO: &str = r#"
  \______/                                   
 
         - "Java builds, without the headache"
-                    v0.7.5
+                    v0.7.6
 "#;
 
 #[derive(Parser, Debug)]
@@ -91,6 +93,26 @@ enum Commands {
         /// the defined profile to run with, these include compiler flags, and environment variables
         profile: Vec<String>,
     },
+    /// Manage Java Versions
+    Java {
+        #[command(subcommand)]
+        java: JavaVersionManger,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum JavaVersionManger {
+    /// List all available JDKs
+    List,
+    /// List the current JDK in use
+    Current,
+    /// This will automatically set the version of the JDK (over riding the system) and downloading if required
+    Use {
+        /// the specific version to install and setup
+        version: String,
+    },
+    /// Remove any installed JDK (this does not affect the system wide JDK)
+    Remove,
 }
 
 #[derive(Subcommand, Debug)]
@@ -129,6 +151,12 @@ async fn main() {
         },
         Commands::Test { tests } => self::handle_tests(tests).await,
         Commands::Bundle { profile } => self::handle_bundle(profile),
+        Commands::Java { java } => match java {
+            JavaVersionManger::List => java::list().await,
+            JavaVersionManger::Current => java::current(),
+            JavaVersionManger::Use { version } => java::_use(version).await,
+            JavaVersionManger::Remove => java::remove(),
+        },
     }
 }
 
@@ -261,6 +289,8 @@ fn handle_bundle(profile: Vec<String>) {
 
         build::execute_build(&grind, BuildTarget::BuildOnly, args.flags);
 
+        shell("rm -rf build/ && mkdir build");
+
         let _ = uberjar::build_fat_jar(&uberjar::FatJarConfig {
             output_jar: Path::new(&format!("build/{}.jar", grind.project.artifactId)),
             classes_dir: Path::new("target"),
@@ -287,11 +317,10 @@ pub fn get_flags(grind: &Grind, profile: String) -> String {
     flags
 }
 
-
 struct RunArgs {
     flags: String,
     envs: String,
-    args: Vec<String>
+    args: Vec<String>,
 }
 
 fn get_run_args(grind: &Grind, args: Vec<String>) -> RunArgs {
@@ -323,7 +352,7 @@ fn get_run_args(grind: &Grind, args: Vec<String>) -> RunArgs {
     RunArgs {
         flags: flags,
         envs: envs,
-        args: xargs
+        args: xargs,
     }
 }
 

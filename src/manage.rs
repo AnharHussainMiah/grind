@@ -19,7 +19,7 @@ pub async fn execute_add(grind: Grind, deps: Vec<String>) {
                 artifact = tokens[1].to_string();
             }
         }
-        // TODO: handle pinned version
+
         if artifact.contains("@") {
             if let Some((a, v)) = artifact.split_once("@") {
                 let a = a.to_string();
@@ -35,7 +35,7 @@ pub async fn execute_add(grind: Grind, deps: Vec<String>) {
             Some(matched_dep) => candidates.push(matched_dep),
             None => {
                 println!(
-                    "❌ WARNING: no match found for {}/{} {}",
+                    "❌ WARNING: no match found for {}/{} v{}",
                     group_id, artifact, version
                 );
             }
@@ -109,8 +109,23 @@ fn delete_jar(dep: &Dependency) -> Result<(), std::io::Error> {
     Ok(())
 }
 
-async fn search_deps(group_id: &str, artifact: &str, _version: &str) -> Option<Dependency> {
-    if let Ok((release, _versions)) = metadata::fetch_maven_metadata(group_id, artifact).await {
+async fn search_deps(group_id: &str, artifact: &str, version: &str) -> Option<Dependency> {
+    if let Ok((release, versions)) = metadata::fetch_maven_metadata(group_id, artifact).await {
+        if !version.is_empty() {
+            if let Some(matched) = versions.into_iter().find(|v| *v == version) {
+                println!("✅ Match Found: {}/{} v{}", &group_id, &artifact, &matched);
+
+                return Some(Dependency {
+                    groupId: group_id.to_string(),
+                    artifactId: artifact.to_string(),
+                    version: matched,
+                    scope: Some("compile".to_string()),
+                });
+            } else {
+                return None;
+            }
+        }
+
         if let Some(v) = release {
             println!("✅ Match Found: {}/{} v{}", &group_id, &artifact, &v);
 
@@ -118,7 +133,7 @@ async fn search_deps(group_id: &str, artifact: &str, _version: &str) -> Option<D
                 groupId: group_id.to_string(),
                 artifactId: artifact.to_string(),
                 version: v,
-                scope: Some("runtime".to_string()),
+                scope: Some("compile".to_string()),
             });
         }
     }

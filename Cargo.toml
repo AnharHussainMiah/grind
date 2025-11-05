@@ -1,6 +1,6 @@
 [package]
 name = "grind"
-version = "0.7.5"
+version = "0.7.6"
 edition = "2024"
 
 [dependencies]
@@ -19,3 +19,6 @@ md5 = "0.8.0"
 walkdir = "2.5.0"
 zip = "6.0.0"
 chrono = "0.4.42"
+futures-util = "0.3.31"
+flate2 = "1.1.5"
+tar = "0.4.44"

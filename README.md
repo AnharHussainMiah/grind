@@ -76,8 +76,8 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 - [x] ✅ Remove a dependency
 - [x] ✅ Testing: using custom test runner [TestTube](https://github.com/AnharHussainMiah/TestTube) built ironically using Grind! _(with built in package integrity checks)_
 - [x] 🧪 Experimental "fat jar" aka `uberjar`
+- [x] ✅ Implement version pinning
 - [ ] 🔨 Split out test dependency when adding/removing _(have separate folder)_ e.g `libs-test`
-- [ ] 🔨 Implement version pinning
 
 ### 🎉 MILESTONE:
 
@@ -85,7 +85,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
 ## Long Term Goals
 
-- [ ] Manage Java SDK versions a bit like "Node Version Manager" or "rustup"
+- [ ] 🔨 Manage Java SDK versions a bit like "Node Version Manager" or "rustup"
 - [ ] Other Repositories other than Maven or Support custom/private repos?
 - [ ] Multiple Project Scaffolds
 - [ ] A Java formatter e.g a bit like "cargo fmt"
