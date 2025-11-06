@@ -1,5 +1,8 @@
 use crate::util;
+use crate::util::shell_custom_path;
+use crate::util::GrindPath;
 use futures_util::StreamExt;
+use regex::Regex;
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::Value;
@@ -34,7 +37,27 @@ pub fn current() {
 
     make sure to let the user know if the current version is the system or grind managed version
     --------------------------------------------------------------------------------------------- */
-    println!("do the current");
+    match self::run_jdk_checks() {
+        Ok(is_grind_jdk) => {
+            let mut include_grind_path = false;
+
+            let managed_jdk = if is_grind_jdk {
+                include_grind_path = true;
+                "✅ [Grind Managed JDK]"
+            } else {
+                "🖥️  [System Installed JDK]"
+            };
+
+            if let Ok(version) = self::get_java_version(include_grind_path) {
+                println!("{} | v{}", managed_jdk, version);
+            } else {
+                println!("❌ Unable to detect any Java on this system");
+            }
+        }
+        Err(e) => {
+            println!("Error, unable to inspect grind JDK! {}", e);
+        }
+    }
 }
 
 async fn get_list() -> Result<(), String> {
@@ -92,6 +115,45 @@ async fn run_install(version: &String, download_link: &String) -> Result<(), Str
     self::create_symlink(version).map_err(|e| e.to_string())?;
     self::set_bash_rc_path().map_err(|e| e.to_string())?;
     Ok(())
+}
+
+fn run_jdk_checks() -> Result<bool, String> {
+    let is_jdk = self::is_jdk_dir_exist()?;
+    let is_symlink = self::is_symlink_exist()?;
+    let is_bashrc = self::is_bashrc_exist()?;
+
+    return Ok(is_jdk && is_bashrc && is_symlink && is_bashrc);
+}
+
+fn is_jdk_dir_exist() -> Result<bool, String> {
+    Ok(util::dir_exists(&"~/.grind/jdks"))
+}
+
+fn is_symlink_exist() -> Result<bool, String> {
+    let full_path =
+        util::expand_tilde(&"~/.grind/jdks/current").ok_or("unable to expand tilde path!")?;
+    Ok(std::fs::metadata(&full_path).is_ok())
+}
+
+fn is_bashrc_exist() -> Result<bool, String> {
+    let bashrc_path = util::expand_tilde("~/.bashrc").ok_or("unable to expand tilde path")?;
+    let bashrc = fs::read_to_string(&bashrc_path).map_err(|e| e.to_string())?;
+
+    Ok(bashrc.contains("# GRIND-JDK-PATH"))
+}
+
+fn get_java_version(include_grind_path: bool) -> Result<String, String> {
+    let grind_path_option = if include_grind_path { GrindPath::Include } else { GrindPath::Exlude }; 
+
+    let out = shell_custom_path("java --version", grind_path_option);
+
+    let re = Regex::new(r#"(\d+\.\d+\.\d+.*\w)"#).map_err(|e| e.to_string())?;
+
+    if let Some(caps) = re.captures(&out) {
+        Ok(format!("{}", &caps[1]))
+    } else {
+        Err("Could not determine Java version.".to_string())
+    }
 }
 
 fn create_jdk_dir() -> Result<(), String> {
@@ -222,7 +284,10 @@ export PATH="$HOME/.grind/jdks/current:$PATH"
         file.write_all(content.as_bytes())
             .map_err(|e| e.to_string())?;
 
-        println!("ℹ️ You will need to reload your shell for new PATH to take affect");
+        println!("ℹ️  You will need to reload your shell for new PATH to take affect");
+        println!(
+            "✔ Updated .bashrc — ⚡ WARNING: restart your terminal"
+        );
         return Ok(());
     }
 }
@@ -273,5 +338,30 @@ pub fn remove() {
     remove from path
     keep anything downloaded, if the user wants to "setup" again, no point re-downloading again
     --------------------------------------------------------------------------------------------- */
-    println!("todo: remove the JDK");
+    match self::run_destroy() {
+        Ok(_) => {
+            println!("💣 Grind Managed JDK Destroyed!");
+            println!(
+                "✔ Updated .bashrc — ⚡ WARNING: restart your terminal"
+            );
+        }
+        Err(e) => {
+            println!("Error, unable to remove Grind managed JDK! {}", e);
+        }
+    }
+}
+
+fn run_destroy() -> Result<(), String> {
+    let source = util::expand_tilde("~/.bashrc").ok_or("unable to expand tilde path")?;
+    let backup = util::expand_tilde("~/.bashrc.bak").ok_or("unable to expand tilde path")?;
+
+    std::fs::copy(&source, backup).map_err(|e| e.to_string())?;
+    let bashrc = fs::read_to_string(&source).map_err(|e| e.to_string())?;
+    let chunks: Vec<&str> = bashrc.split("# GRIND-JDK-PATH").collect();
+
+    if !chunks.is_empty() {
+        fs::write(source, chunks[0]).map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
 }

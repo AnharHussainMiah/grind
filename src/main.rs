@@ -40,7 +40,7 @@ const LOGO: &str = r#"
  \______/                                   
 
         - "Java builds, without the headache"
-                    v0.7.6
+                    v0.8.0
 "#;
 
 #[derive(Parser, Debug)]

@@ -3,7 +3,7 @@
 ![Grind](logo.png)
 
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/anharhussainmiah/grind?style=for-the-badge&logo=github&label=Latest%20Release)
-![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
+![License](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)
 ![Built with Rust](https://img.shields.io/badge/Built%20with-Rust-orange?style=for-the-badge&logo=rust)
 
 ## 🚀 More Coffee, Less XML and configuration
@@ -85,7 +85,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
 ## Long Term Goals
 
-- [ ] 🔨 Manage Java SDK versions a bit like "Node Version Manager" or "rustup"
+- [x] ✅ Manage Java SDK versions a bit like "Node Version Manager" or "rustup"
 - [ ] Other Repositories other than Maven or Support custom/private repos?
 - [ ] Multiple Project Scaffolds
 - [ ] A Java formatter e.g a bit like "cargo fmt"
@@ -108,7 +108,7 @@ Once installed, managing your Java projects is only a single command away.
  \______/
 
         - "Java builds, without the headache"
-                    v0.7.4
+                    v0.8.0
 
 
 Usage: grind <COMMAND>
@@ -124,6 +124,7 @@ Commands:
   integrity  Create the integrity file or validate one for plugins/packages
   test       Run Tests
   bundle     Packages compiled classes and all dependency jars into a single runnable JAR, also known as a "Fat Jar" or "Uberjar"
+  java       Manage Java Versions
   help       Print this message or the help of the given subcommand(s)
 
 Options:
@@ -367,3 +368,16 @@ module and keep things as "flat" as possible. I believe keeping the indirection 
 I'm open to contributions, suggestions, and ideas, etc but please be kind!
 
 If you've found this project helpful, please leave a 🌟 or help spread the word!
+
+## License
+
+Grind is licensed under the GNU General Public License v3.0 (GPLv3).
+See [LICENSE](./license) for full details.
+
+### NOTICE
+
+This project may include third-party dependencies with different licenses.
+Users who build or redistribute this project are responsible for complying
+with the licenses of all included dependencies.
+
+Full source code is included in this repository.

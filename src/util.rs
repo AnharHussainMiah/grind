@@ -44,6 +44,51 @@ pub fn shell(cmd: &str) -> String {
     result.trim().to_string()
 }
 
+pub enum GrindPath {
+    Include,
+    Exlude
+}
+
+pub fn shell_custom_path(cmd: &str, grind_path_option: GrindPath) -> String {
+    let path = env::var("PATH").unwrap_or_default();
+    let home = env::var("HOME").unwrap_or_default();
+    let mut paths: Vec<&str> = path.split(':').collect();
+
+    let prefix = format!("{}/.grind/jdks/current", home);
+    match grind_path_option {
+        GrindPath::Include => {
+            paths.insert(0, &prefix);
+        },
+        GrindPath::Exlude => {
+            paths.retain(|p| !p.contains("grind/jdks/current"));
+        }
+    }
+    let new_path = paths.join(":");
+
+    let output = Command::new("bash")
+        .env("PATH", &new_path)
+        .arg("-lc")
+        .arg(cmd)
+        .output()
+        .expect("failed to execute command");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+
+    let mut result = String::new();
+
+    if !stdout.trim().is_empty() {
+        result.push_str(&stdout);
+    }
+
+    if !stderr.trim().is_empty() {
+        result.push_str("\n⚠️ Error:\n");
+        result.push_str(&stderr);
+    }
+
+    result.trim().to_string()
+}
+
 #[allow(dead_code)]
 pub fn shell_result(cmd: &str) -> Result<String, String> {
     let output = Command::new("bash")
