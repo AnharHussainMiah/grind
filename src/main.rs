@@ -43,8 +43,15 @@ const LOGO: &str = r#"
                     v0.8.0
 "#;
 
+const LICENSE: &str = r#"
+Licensed under the GNU GPLv3 or later.
+
+See <https://www.gnu.org/licenses/gpl-3.0.html> for details.
+© 2025 Anhar Hussain Miah <anharhussainmiah@googlemail.com>"
+"#;
+
 #[derive(Parser, Debug)]
-#[command(author = "Anhar Miah", version, about = LOGO, long_about = None)]
+#[command(author = "Anhar Miah", version, about = LOGO, long_about = None, after_help = LICENSE)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

@@ -1,6 +1,6 @@
 use crate::util;
-use crate::util::shell_custom_path;
 use crate::util::GrindPath;
+use crate::util::shell_custom_path;
 use futures_util::StreamExt;
 use regex::Regex;
 use reqwest::Client;
@@ -143,7 +143,11 @@ fn is_bashrc_exist() -> Result<bool, String> {
 }
 
 fn get_java_version(include_grind_path: bool) -> Result<String, String> {
-    let grind_path_option = if include_grind_path { GrindPath::Include } else { GrindPath::Exlude }; 
+    let grind_path_option = if include_grind_path {
+        GrindPath::Include
+    } else {
+        GrindPath::Exlude
+    };
 
     let out = shell_custom_path("java --version", grind_path_option);
 
@@ -285,9 +289,7 @@ export PATH="$HOME/.grind/jdks/current:$PATH"
             .map_err(|e| e.to_string())?;
 
         println!("ℹ️  You will need to reload your shell for new PATH to take affect");
-        println!(
-            "✔ Updated .bashrc — ⚡ WARNING: restart your terminal"
-        );
+        println!("✔ Updated .bashrc — ⚡ WARNING: restart your terminal");
         return Ok(());
     }
 }
@@ -341,9 +343,7 @@ pub fn remove() {
     match self::run_destroy() {
         Ok(_) => {
             println!("💣 Grind Managed JDK Destroyed!");
-            println!(
-                "✔ Updated .bashrc — ⚡ WARNING: restart your terminal"
-            );
+            println!("✔ Updated .bashrc — ⚡ WARNING: restart your terminal");
         }
         Err(e) => {
             println!("Error, unable to remove Grind managed JDK! {}", e);

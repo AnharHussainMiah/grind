@@ -46,7 +46,7 @@ pub fn shell(cmd: &str) -> String {
 
 pub enum GrindPath {
     Include,
-    Exlude
+    Exlude,
 }
 
 pub fn shell_custom_path(cmd: &str, grind_path_option: GrindPath) -> String {
@@ -58,7 +58,7 @@ pub fn shell_custom_path(cmd: &str, grind_path_option: GrindPath) -> String {
     match grind_path_option {
         GrindPath::Include => {
             paths.insert(0, &prefix);
-        },
+        }
         GrindPath::Exlude => {
             paths.retain(|p| !p.contains("grind/jdks/current"));
         }
