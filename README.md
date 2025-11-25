@@ -8,6 +8,10 @@
 
 ## 🚀 More Coffee, Less XML and configuration
 
+Watch my presentation about Grind on YouTube: ["Grind: Java Deserves Modern Tooling\*"](https://www.youtube.com/watch?v=-mOby4FPRXg)
+
+![Grind: Java Deserves Modern Tooling*](YT.png)
+
 Compared to modern build tools such as **cargo** and **npm** Java build tools feel outdated and overly complex, and they seem to be relegated to the background only to be used by the IDE or CI/CD tooling.
 
 **grind** is a hassle free, Rust powered CLI designed to remove the friction and improve the DX compared to the current set of Java build tools such as **Maven** and **Gradle**. Are you tired of fighting and wasting time with these complex build tools and really heavy IDEs? Then maybe it's time to try a new alternative! `grind` is perfect for those who prefer "batteries included" CLIs toolchains and lightweight editors such as Visual Studio Code, VIM/Emacs etc.
@@ -81,7 +85,7 @@ We recommend downloading the appropriate binary for your system from the [GitHub
 
 ### 🎉 MILESTONE:
 
-`grind` has been tested against the original famous [Pet Clinic Spring Demo](https://github.com/spring-projects/spring-petclinic). We re-created this project using `grind` and as `v0.7.4` able to fully compile, run, and even bundle a fat jar! here is the grind version of the [Pet Clinic](https://github.com/AnharHussainMiah/PetClinicApplication/)
+`grind` has been tested against the famous [Pet Clinic Spring Demo](https://github.com/spring-projects/spring-petclinic). We re-created this project using `grind` and as `v0.7.4` able to fully compile, run, and even bundle a fat jar! here is the grind version of the [Pet Clinic](https://github.com/AnharHussainMiah/PetClinicApplication/)
 
 ## Long Term Goals
 
