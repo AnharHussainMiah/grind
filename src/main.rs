@@ -251,14 +251,10 @@ fn parse_project_name(input: &str) -> Result<(&str, &str), &'static str> {
         _ => return Err("⚠️ Input must contain exactly one '/' and two non-empty parts"),
     };
 
-    match (
-        validate_namespace(namespace),
-        validate_artifact_id(artifact_id),
-    ) {
-        (Ok(_), Ok(_)) => Ok((namespace, artifact_id)),
-        (Err(e), _) => Err(e),
-        (_, Err(e)) => Err(e),
-    }
+    Ok((
+        validate_namespace(namespace)?,
+        validate_artifact_id(artifact_id)?,
+    ))
 }
 
 fn is_valid_java_identifier(identifier: &str) -> bool {
@@ -284,7 +280,7 @@ fn is_valid_java_identifier(identifier: &str) -> bool {
     true
 }
 
-fn validate_namespace(namespace: &str) -> Result<(), &'static str> {
+fn validate_namespace(namespace: &str) -> Result<&str, &'static str> {
     for part in namespace.split('.') {
         match is_valid_java_identifier(part) {
             true => continue,
@@ -292,12 +288,12 @@ fn validate_namespace(namespace: &str) -> Result<(), &'static str> {
         }
     }
 
-    Ok(())
+    Ok(namespace)
 }
 
-fn validate_artifact_id(artifact_id: &str) -> Result<(), &'static str> {
+fn validate_artifact_id(artifact_id: &str) -> Result<&str, &'static str> {
     match is_valid_java_identifier(artifact_id) {
-        true => Ok(()),
+        true => Ok(artifact_id),
         false => Err("⚠️ Your artifactId contains an invalid java identifier"),
     }
 }
