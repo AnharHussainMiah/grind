@@ -168,22 +168,26 @@ async fn main() {
 }
 
 fn handle_new(name: &str) {
-    if let Ok((namespace, artifact_id)) = self::parse_project_name(name) {
-        let folder_path = Path::new(artifact_id);
+    match self::parse_project_name(name) {
+        Ok((namespace, artifact_id)) => {
+            let folder_path = Path::new(artifact_id);
 
-        if !folder_path.exists() || !folder_path.is_dir() {
-            scaffold::create(namespace, artifact_id);
-        } else {
-            println!(
-                "⚠️ Sorry project folder '{}' already exists, exiting...",
-                artifact_id
-            );
+            if !folder_path.exists() || !folder_path.is_dir() {
+                scaffold::create(namespace, artifact_id);
+            } else {
+                println!(
+                    "⚠️ Sorry project folder '{}' already exists, exiting...",
+                    artifact_id
+                );
+            }
         }
-    } else {
-        println!(
-            "⚠️ Sorry '{}' is not a valid project name, requires a namespace and artifactId, e.g com.example/HelloWorld",
-            name
-        );
+        Err(e) => {
+            println!(
+                "⚠️ Sorry '{}' is not a valid project name, requires a namespace and artifactId, e.g com.example/HelloWorld",
+                name
+            );
+            println!("{e}");
+        }
     }
 }
 
