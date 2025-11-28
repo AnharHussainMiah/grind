@@ -242,9 +242,59 @@ async fn handle_remove(deps: Vec<String>) {
 fn parse_project_name(input: &str) -> Result<(&str, &str), &'static str> {
     let mut parts = input.split('/');
 
-    match (parts.next(), parts.next(), parts.next()) {
-        (Some(first), Some(second), None) => Ok((first, second)),
-        _ => Err("⚠️ Input must contain exactly one '/' and two non-empty parts"),
+    let (group_id, artifact_id) = match (parts.next(), parts.next(), parts.next()) {
+        (Some(first), Some(second), None) => (first, second),
+        _ => return Err("⚠️ Input must contain exactly one '/' and two non-empty parts"),
+    };
+
+    match (
+        validate_group_id(group_id),
+        validate_artifact_id(artifact_id),
+    ) {
+        (Ok(_), Ok(_)) => Ok((group_id, artifact_id)),
+        (Err(e), _) => Err(e),
+        (_, Err(e)) => Err(e),
+    }
+}
+
+fn is_valid_java_identifier(identifier: &str) -> bool {
+    // Make sure we have at least one character
+    if identifier.is_empty() {
+        return false;
+    }
+
+    // Check valid characters
+    for c in identifier.chars() {
+        match c {
+            '_' | '$' | 'A'..='Z' | 'a'..='z' | '0'..='9' => continue,
+            _ => return false,
+        }
+    }
+
+    // Ensure we don't start with a digit character.
+    match identifier.chars().nth(0).unwrap() {
+        '0'..='9' => return false,
+        _ => {}
+    }
+
+    true
+}
+
+fn validate_group_id(group_id: &str) -> Result<(), &'static str> {
+    for part in group_id.split('.') {
+        match is_valid_java_identifier(part) {
+            true => continue,
+            false => return Err("⚠️ Your namespace contains an invalid java identifier"),
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_artifact_id(artifact_id: &str) -> Result<(), &'static str> {
+    match is_valid_java_identifier(artifact_id) {
+        true => Ok(()),
+        false => Err("⚠️ Your artifactId contains an invalid java identifier"),
     }
 }
 
