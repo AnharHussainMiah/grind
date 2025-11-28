@@ -246,16 +246,16 @@ async fn handle_remove(deps: Vec<String>) {
 fn parse_project_name(input: &str) -> Result<(&str, &str), &'static str> {
     let mut parts = input.split('/');
 
-    let (group_id, artifact_id) = match (parts.next(), parts.next(), parts.next()) {
+    let (namespace, artifact_id) = match (parts.next(), parts.next(), parts.next()) {
         (Some(first), Some(second), None) => (first, second),
         _ => return Err("⚠️ Input must contain exactly one '/' and two non-empty parts"),
     };
 
     match (
-        validate_group_id(group_id),
+        validate_namespace(namespace),
         validate_artifact_id(artifact_id),
     ) {
-        (Ok(_), Ok(_)) => Ok((group_id, artifact_id)),
+        (Ok(_), Ok(_)) => Ok((namespace, artifact_id)),
         (Err(e), _) => Err(e),
         (_, Err(e)) => Err(e),
     }
@@ -284,8 +284,8 @@ fn is_valid_java_identifier(identifier: &str) -> bool {
     true
 }
 
-fn validate_group_id(group_id: &str) -> Result<(), &'static str> {
-    for part in group_id.split('.') {
+fn validate_namespace(namespace: &str) -> Result<(), &'static str> {
+    for part in namespace.split('.') {
         match is_valid_java_identifier(part) {
             true => continue,
             false => return Err("⚠️ Your namespace contains an invalid java identifier"),
