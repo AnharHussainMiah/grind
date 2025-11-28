@@ -168,22 +168,26 @@ async fn main() {
 }
 
 fn handle_new(name: &str) {
-    if let Ok((namespace, artifact_id)) = self::parse_project_name(name) {
-        let folder_path = Path::new(artifact_id);
+    match self::parse_project_name(name) {
+        Ok((namespace, artifact_id)) => {
+            let folder_path = Path::new(artifact_id);
 
-        if !folder_path.exists() || !folder_path.is_dir() {
-            scaffold::create(namespace, artifact_id);
-        } else {
-            println!(
-                "⚠️ Sorry project folder '{}' already exists, exiting...",
-                artifact_id
-            );
+            if !folder_path.exists() || !folder_path.is_dir() {
+                scaffold::create(namespace, artifact_id);
+            } else {
+                println!(
+                    "⚠️ Sorry project folder '{}' already exists, exiting...",
+                    artifact_id
+                );
+            }
         }
-    } else {
-        println!(
-            "⚠️ Sorry '{}' is not a valid project name, requires a namespace and artifactId, e.g com.example/HelloWorld",
-            name
-        );
+        Err(e) => {
+            println!(
+                "⚠️ Sorry '{}' is not a valid project name, requires a namespace and artifactId, e.g com.example/HelloWorld",
+                name
+            );
+            println!("{e}");
+        }
     }
 }
 
@@ -242,9 +246,55 @@ async fn handle_remove(deps: Vec<String>) {
 fn parse_project_name(input: &str) -> Result<(&str, &str), &'static str> {
     let mut parts = input.split('/');
 
-    match (parts.next(), parts.next(), parts.next()) {
-        (Some(first), Some(second), None) => Ok((first, second)),
-        _ => Err("⚠️ Input must contain exactly one '/' and two non-empty parts"),
+    let (namespace, artifact_id) = match (parts.next(), parts.next(), parts.next()) {
+        (Some(first), Some(second), None) => (first, second),
+        _ => return Err("⚠️ Input must contain exactly one '/' and two non-empty parts"),
+    };
+
+    Ok((
+        validate_namespace(namespace)?,
+        validate_artifact_id(artifact_id)?,
+    ))
+}
+
+fn is_valid_java_identifier(identifier: &str) -> bool {
+    // Make sure we have at least one character
+    if identifier.is_empty() {
+        return false;
+    }
+
+    // Check valid characters
+    for c in identifier.chars() {
+        match c {
+            '_' | '$' | 'A'..='Z' | 'a'..='z' | '0'..='9' => continue,
+            _ => return false,
+        }
+    }
+
+    // Ensure we don't start with a digit character.
+    match identifier.chars().nth(0).unwrap() {
+        '0'..='9' => return false,
+        _ => {}
+    }
+
+    true
+}
+
+fn validate_namespace(namespace: &str) -> Result<&str, &'static str> {
+    for part in namespace.split('.') {
+        match is_valid_java_identifier(part) {
+            true => continue,
+            false => return Err("⚠️ Your namespace contains an invalid java identifier"),
+        }
+    }
+
+    Ok(namespace)
+}
+
+fn validate_artifact_id(artifact_id: &str) -> Result<&str, &'static str> {
+    match is_valid_java_identifier(artifact_id) {
+        true => Ok(artifact_id),
+        false => Err("⚠️ Your artifactId contains an invalid java identifier"),
     }
 }
 
