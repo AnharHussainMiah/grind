@@ -88,6 +88,7 @@ async fn get_list() -> Result<(), String> {
 }
 
 pub async fn _use(version: String) {
+    let version = version.trim_start_matches('v');
     match self::get_jdk_detail(&version).await {
         Ok(download_link) => {
             /* -------------------------------------------------------------------------------------
@@ -107,9 +108,9 @@ pub async fn _use(version: String) {
     }
 }
 
-async fn run_install(version: &String, download_link: &String) -> Result<(), String> {
+async fn run_install(version: &str, download_link: &String) -> Result<(), String> {
     self::create_jdk_dir().map_err(|e| e.to_string())?;
-    self::download_sdk(&version, download_link.to_string())
+    self::download_sdk(version, download_link.to_string())
         .await
         .map_err(|e| e.to_string())?;
     self::create_symlink(version).map_err(|e| e.to_string())?;
@@ -168,7 +169,7 @@ fn create_jdk_dir() -> Result<(), String> {
     Ok(())
 }
 
-async fn download_sdk(version: &String, url: String) -> Result<(), String> {
+async fn download_sdk(version: &str, url: String) -> Result<(), String> {
     let sdk = format!("~/.grind/jdks/v{}", version);
     if !util::dir_exists(&sdk) {
         println!("==> JDK v{} not yet installed, downloading...", version);
@@ -252,7 +253,7 @@ fn format_bytes(bytes: u64) -> String {
     }
 }
 
-fn create_symlink(version: &String) -> Result<(), String> {
+fn create_symlink(version: &str) -> Result<(), String> {
     if !util::create_symlink(
         &format!("~/.grind/jdks/v{}/bin", version),
         &format!("~/.grind/jdks/current"),
@@ -294,8 +295,7 @@ export PATH="$HOME/.grind/jdks/current:$PATH"
     }
 }
 
-async fn get_jdk_detail(version: &String) -> Result<String, String> {
-    let version = version.trim_start_matches('v');
+async fn get_jdk_detail(version: &str) -> Result<String, String> {
     let os = self::map_os(std::env::consts::OS);
     let arch = self::map_arch(std::env::consts::ARCH);
 
