@@ -295,6 +295,7 @@ export PATH="$HOME/.grind/jdks/current:$PATH"
 }
 
 async fn get_jdk_detail(version: &String) -> Result<String, String> {
+    let version = version.trim_start_matches('v');
     let os = self::map_os(std::env::consts::OS);
     let arch = self::map_arch(std::env::consts::ARCH);
 
