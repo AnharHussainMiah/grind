@@ -13,7 +13,7 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::io;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize)]
@@ -269,6 +269,8 @@ fn set_bash_rc_path() -> Result<(), String> {
     let bashrc_path = util::expand_tilde("~/.bashrc").ok_or("unable to expand tilde path")?;
     let bashrc = fs::read_to_string(&bashrc_path).map_err(|e| e.to_string())?;
 
+    self::backup_bashrc(&bashrc, &bashrc_path)?;
+
     if bashrc.contains("# GRIND-JDK-PATH") {
         println!("✅ valid PATH in bashrc...");
         return Ok(());
@@ -293,6 +295,18 @@ export PATH="$HOME/.grind/jdks/current:$PATH"
         println!("✔ Updated .bashrc — ⚡ WARNING: restart your terminal");
         return Ok(());
     }
+}
+
+fn backup_bashrc(data: &String, bashrc_path: &PathBuf) -> Result<(), String> {
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(&format!("{}.bak", bashrc_path.display()))
+        .map_err(|e| e.to_string())?;
+
+    file.write_all(data.as_bytes()).map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 async fn get_jdk_detail(version: &str) -> Result<String, String> {
